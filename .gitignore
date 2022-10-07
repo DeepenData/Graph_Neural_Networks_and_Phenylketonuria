@@ -1,0 +1,6 @@
+results/ 
+**/*.png 
+**/*.gzip 
+**/*.zip 
+**/*.pkl 
+**/*.csv 
