@@ -1,6 +1,10 @@
-results/ 
+results/
+tmp/  
 **/*.png 
 **/*.gzip 
 **/*.zip 
 **/*.pkl 
-**/*.csv 
+**/*.csv
+**/*.txt
+**/*.rar
+**/*.gpickle   
