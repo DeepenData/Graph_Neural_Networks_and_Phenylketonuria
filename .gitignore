@@ -1,10 +1,15 @@
 results/
 tmp/  
-**/*.png 
+**/*.png
+**/*.svg
+**/*.pdf   
 **/*.gzip 
 **/*.zip 
 **/*.pkl 
 **/*.csv
 **/*.txt
+**/*.tsv
 **/*.rar
-**/*.gpickle   
+**/*.gpickle
+**/*.xls
+**/*.xlsx
