@@ -1,5 +1,6 @@
 results/
-tmp/  
+tmp/
+COBRA_models_and_graphs/  
 **/*.png
 **/*.svg
 **/*.pdf   
@@ -13,3 +14,10 @@ tmp/
 **/*.gpickle
 **/*.xls
 **/*.xlsx
+**/*.tar
+**/*.gz
+**/*.json
+**/*.h5
+**/*.hdf5
+**/*.pt
+**/*.pth
