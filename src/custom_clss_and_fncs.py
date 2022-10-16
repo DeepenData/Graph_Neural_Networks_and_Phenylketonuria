@@ -27,6 +27,13 @@ import numpy as np
 from torch_geometric.nn.models import GIN
 import numpy as np
 from sklearn.model_selection import train_test_split
+from torch_geometric.utils.convert import from_networkx
+from torch_geometric.loader import DataLoader
+from torch_geometric.nn import global_mean_pool
+import numpy as np
+from torch_geometric.nn.models import GIN
+import numpy as np
+from sklearn.model_selection import train_test_split
 
 def cobra_a_networkx(model, undirected: bool = True):
   S_matrix = create_stoichiometric_matrix(model)
@@ -109,20 +116,10 @@ def cobra_a_networkx(model, undirected: bool = True):
   if undirected:
       
       
-      return  nx.Graph(grafo_nx)
+      return   copy.deepcopy(nx.Graph(grafo_nx))
   
   
   return 
-
-from torch_geometric.utils.convert import from_networkx
-from torch_geometric.loader import DataLoader
-from torch_geometric.nn import global_mean_pool
-import numpy as np
-from torch_geometric.nn.models import GIN
-import numpy as np
-from sklearn.model_selection import train_test_split
-
-
 
 def set_flux_attributes_in_nx(flux_samples, grafo_nx, target_node):
 
