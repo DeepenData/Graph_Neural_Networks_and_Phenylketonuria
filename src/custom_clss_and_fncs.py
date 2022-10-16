@@ -1,6 +1,8 @@
 import networkx as nx 
 import pandas as pd
 import warnings 
+from torch_geometric.data import Data
+
 warnings.filterwarnings("ignore")
 from cobra import Model, Reaction, Metabolite
 import cobra
@@ -34,7 +36,19 @@ import numpy as np
 from torch_geometric.nn.models import GIN
 import numpy as np
 from sklearn.model_selection import train_test_split
-
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB 
+from sklearn.neural_network import MLPClassifier
+import matplotlib.pyplot as plt
+from mlxtend.plotting import plot_decision_regions
+import matplotlib.gridspec as gridspec
+from sklearn.datasets import make_classification
+import umap
+from sklearn import preprocessing
 def cobra_a_networkx(model, undirected: bool = True):
   S_matrix = create_stoichiometric_matrix(model)
 
