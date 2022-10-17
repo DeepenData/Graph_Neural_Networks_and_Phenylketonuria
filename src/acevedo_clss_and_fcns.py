@@ -277,7 +277,7 @@ class GIN_classifier(torch.nn.Module):
         n_nodes : int, 
         num_features : int, 
         out_channels: int = 8,
-        dropout : float = 0.07, 
+        dropout : float = 0.05, 
         hidden_dim : int = 8, 
         #heads : int = 5,
         LeakyReLU_slope : float = 0.01,
@@ -292,20 +292,11 @@ class GIN_classifier(torch.nn.Module):
         self.out_channels = out_channels
         
         self.GIN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
-                               out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = True)
+                               out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False)      
         
-        
-        
-               
         self.FC1        = Linear(in_features=out_channels, out_features=1, bias=True)
-        self.FC2        = Linear(in_features=self.n_nodes, out_features=2, bias=True)
-        
-        
-        
-        
-        
-        #self.FC2        = Linear(in_features=n_nodes, out_features=1, bias=True)#.to('cuda')        #self.leakyrelu = LeakyReLU(LeakyReLU_slope).to('cuda')
-        self.leakyrelu = LeakyReLU(LeakyReLU_slope)#.to('cuda')
+        self.FC2        = Linear(in_features=self.n_nodes, out_features=2, bias=True)      
+        self.leakyrelu  = LeakyReLU(LeakyReLU_slope)#.to('cuda')
     def forward(self, x):
         data       = x.x 
         edge_index = x.edge_index
@@ -317,12 +308,11 @@ class GIN_classifier(torch.nn.Module):
         x     = x.reshape(batch_size,  self.n_nodes)              
         x     = self.FC2(self.leakyrelu(x))
         x     = x.reshape(batch_size, 2)
-        
-        
-        
-        return   F.log_softmax(x, dim=1).squeeze()#x.squeeze() #x[:,self.target_node_idx,:].squeeze()
+        return   torch.nn.functional.log_softmax(x, dim=1).squeeze()
     
-def train_one_epoch(modelo: GIN_classifier,
+    
+    
+def Adcanced_train_one_epoch(modelo: GIN_classifier,
                     optimizer, 
                     train_loader: torch_geometric.loader.dataloader.DataLoader,
                     loss_fun: torch.nn.modules.loss,
@@ -387,29 +377,49 @@ def train_one_epoch(modelo: GIN_classifier,
     torch.optim.swa_utils.update_bn(train_loader, swa_model, device=device)
     return last_loss
 
-def validate(modelo: GIN_classifier, loss_fun: torch.nn, loader: DataLoader, device: str = 'cpu'):
+def validate(modelo: GIN_classifier, loader: DataLoader, device: str = 'cpu'):
     modelo.eval()
-    running_vloss = 0.0
     correct = 0
     for i, val_data in enumerate(loader):
         
         assert not val_data.is_cuda
         if (device == 'cuda:0') | (device == 'cuda'):
             val_data.to(device, non_blocking=True) 
-            assert val_data.is_cuda
-                           
-        #val_data.to(device, non_blocking=True) 
+            assert val_data.is_cuda                          
 
         val_predictions = modelo(val_data)# Make predictions for this batch
         pred            = val_predictions.argmax(dim=1)
-        
-        #val_loss    = loss_fun(predictions, val_data.y.long())
-        #running_vloss += val_loss.item()
+
         correct += int((pred == val_data.y).sum())
         
-    #avg_vloss = running_vloss / (i + 1)
+
     return correct / len(loader.dataset)   
-  
+
+def train_one_epoch(modelo: GIN_classifier,
+                    optimizer, 
+                    train_loader: torch_geometric.loader.dataloader.DataLoader,
+                    loss_fun: torch.nn.modules.loss,
+                    device:str='cpu' ):
+
+    correct = 0
+    for i, data in enumerate(train_loader):
+        assert not data.is_cuda   
+        if (device == 'cuda:0') | (device == 'cuda'):                            
+            data.to(device, non_blocking=True) 
+            assert data.is_cuda       
+                
+        optimizer.zero_grad(set_to_none=True) # Zero your gradients for every batch        
+        if (device == 'cuda:0') | (device == 'cuda'):
+            #with torch.cuda.amp.autocast():      
+            predictions = modelo(data)# Make predictions for this batch
+            loss        = loss_fun(predictions, data.y)
+            loss.backward()  # Derive gradients.
+            optimizer.step()  # Update parameters based on gradients.        
+            pred     = predictions.argmax(dim=1)  # Use the class with highest probability.
+            correct += int((pred == data.y).sum())  # Check against ground-truth labels.
+
+    return correct / len(train_loader.dataset)
+
 def train_and_validate(modelo,loss_fun,optimizer, EPOCHS ,train_loader,validation_loader, 
                        validation_cycle:int = 4,
                        save_state_dict:bool = False,save_entire_model:bool = False,verbose:bool= False,
@@ -429,7 +439,7 @@ def train_and_validate(modelo,loss_fun,optimizer, EPOCHS ,train_loader,validatio
     for epoch in tqdm.tqdm(range(EPOCHS)):
 
         modelo.train(True)
-        avg_loss  = train_one_epoch(modelo, optimizer,train_loader, loss_fun, scaler, swa_start, swa_model, swa_scheduler, scheduler,
+        avg_loss  = Adcanced_train_one_epoch(modelo, optimizer,train_loader, loss_fun, scaler, swa_start, swa_model, swa_scheduler, scheduler,
                                     n_batches_report = n_batches_report, device=device) 
         if epoch % validation_cycle == 0:
             avg_vloss = validate(modelo, loss_fun, validation_loader, device=device )                
@@ -535,3 +545,44 @@ class batch_loader():
         replacement=False)   
         
         return  DataLoader(validation_subset, batch_size= self.batch_size, sampler = sampler,  drop_last=True)
+    
+    
+class GIN_classifier_to_explain(torch.nn.Module):
+    
+    def __init__(
+        self, 
+        batch_size,
+        #target_node_idx: int,
+        n_nodes : int, 
+        num_features : int, 
+        out_channels: int = 8,
+        dropout : float = 0.05, 
+        hidden_dim : int = 8, 
+        LeakyReLU_slope : float = 0.01,
+
+        num_layers: int = 4
+    ):
+        super(GIN_classifier_to_explain, self).__init__() # TODO: why SUPER gato? 
+        self.n_nodes = n_nodes
+        self.dropout = dropout
+        self.num_features = num_features
+        #self.target_node_idx = target_node_idx
+        self.out_channels = out_channels
+        self.batch_size   = batch_size
+        
+        self.GIN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+                               out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False)      
+        
+        self.FC1        = Linear(in_features=out_channels, out_features=1, bias=True)
+        self.FC2        = Linear(in_features=self.n_nodes, out_features=2, bias=True)      
+        self.leakyrelu  = LeakyReLU(LeakyReLU_slope)#.to('cuda')
+    def forward(self, x, edge_index, batch):
+
+
+        x     = self.GIN_layers(x, edge_index)
+        x     = x.reshape(self.batch_size, self.n_nodes, self.out_channels)
+        x     = self.FC1(self.leakyrelu(x))
+        x     = x.reshape(self.batch_size,  self.n_nodes)              
+        x     = self.FC2(self.leakyrelu(x))
+        x     = x.reshape(self.batch_size, 2)
+        return   torch.nn.functional.log_softmax(x, dim=1).squeeze()
