@@ -15,7 +15,8 @@ import pandas as pd
 import warnings 
 import torch
 from torch_geometric.data import Data
-
+from torch.optim.swa_utils import SWALR
+from datetime import datetime
 warnings.filterwarnings("ignore")
 from cobra import Model, Reaction, Metabolite
 import cobra
@@ -36,6 +37,7 @@ import networkx as nx
 import pickle
 from torch.utils.data import RandomSampler
 from torch.nn import Linear, LeakyReLU
+import torch_geometric
 from torch_geometric.loader import DataLoader
 from torch_geometric.nn import global_mean_pool
 import numpy as np
@@ -62,7 +64,9 @@ import matplotlib.gridspec as gridspec
 from sklearn.datasets import make_classification
 import umap
 from sklearn import preprocessing
-
+import gc
+import tqdm
+ 
 def plot_classsifiers(X, y):
     
 
@@ -263,3 +267,201 @@ def train_classifiers_with_dataloader(loader):
     embedding = reducer.fit_transform(X_from_loader)
     plot_classsifiers(embedding, labels_from_loader.to(int).numpy())
     plt.show()
+    
+import torch.nn.functional as F
+class GIN_classifier(torch.nn.Module):
+    
+    def __init__(
+        self, 
+        target_node_idx: int,
+        n_nodes : int, 
+        num_features : int, 
+        out_channels: int = 8,
+        dropout : float = 0.07, 
+        hidden_dim : int = 8, 
+        #heads : int = 5,
+        LeakyReLU_slope : float = 0.01,
+
+        num_layers: int = 4
+    ):
+        super(GIN_classifier, self).__init__() # TODO: why SUPER gato? 
+        self.n_nodes = n_nodes
+        self.dropout = dropout
+        self.num_features = num_features
+        self.target_node_idx = target_node_idx
+        self.out_channels = out_channels
+        
+        self.GIN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+                               out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = True)
+        
+        
+        
+               
+        self.FC1        = Linear(in_features=out_channels, out_features=1, bias=True)
+        self.FC2        = Linear(in_features=self.n_nodes, out_features=2, bias=True)
+        
+        
+        
+        
+        
+        #self.FC2        = Linear(in_features=n_nodes, out_features=1, bias=True)#.to('cuda')        #self.leakyrelu = LeakyReLU(LeakyReLU_slope).to('cuda')
+        self.leakyrelu = LeakyReLU(LeakyReLU_slope)#.to('cuda')
+    def forward(self, x):
+        data       = x.x 
+        edge_index = x.edge_index
+        batch_size = x.y.shape[0]
+
+        x     = self.GIN_layers(data, edge_index)
+        x     = x.reshape(batch_size, self.n_nodes, self.out_channels)
+        x     = self.FC1(self.leakyrelu(x))
+        x     = x.reshape(batch_size,  self.n_nodes)              
+        x     = self.FC2(self.leakyrelu(x))
+        x     = x.reshape(batch_size, 2)
+        
+        
+        
+        return   F.log_softmax(x, dim=1).squeeze()#x.squeeze() #x[:,self.target_node_idx,:].squeeze()
+    
+def train_one_epoch(modelo: GIN_classifier,
+                    optimizer, 
+                    train_loader: torch_geometric.loader.dataloader.DataLoader,
+                    loss_fun: torch.nn.modules.loss,
+                    scaler:torch.cuda.amp.grad_scaler.GradScaler,
+                    swa_start:int,
+                    swa_model,swa_scheduler,scheduler, 
+                    n_batches_report:int, device:str='cpu' ):
+    running_loss = 0.
+    last_loss = 0.
+    for i, data in enumerate(train_loader):
+        assert not data.is_cuda   
+        if (device == 'cuda:0') | (device == 'cuda'):                            
+            data.to(device, non_blocking=True) 
+            assert data.is_cuda
+        
+                
+        optimizer.zero_grad(set_to_none=True) # Zero your gradients for every batch
+        
+        if (device == 'cuda:0') | (device == 'cuda'):
+            with torch.cuda.amp.autocast():      
+                predictions = modelo(data)# Make predictions for this batch
+                loss        = loss_fun(predictions, data.y.long())
+            scaler.scale(loss).backward()
+
+            if (i+1) % 2 == 0:  
+                if i > swa_start:
+                    swa_model.update_parameters(modelo)
+                    swa_scheduler.step()
+                else:
+                    scheduler.step()
+            
+            #check_seen_y.extend(data.y.squeeze().tolist())
+            #loss.backward()  # Derive gradients.
+                scaler.step(optimizer)
+                scaler.update()
+            #optimizer.step()  # Update parameters based on gradients.
+                running_loss += loss.item()
+                 
+            
+        else:
+            with torch.cuda.amp.autocast():
+                predictions = modelo(data)# Make predictions for this batch
+                loss        = loss_fun(predictions, data.y.long())
+            loss.backward()
+            if (i+1) % 2 == 0:  
+                if i > swa_start:
+                    swa_model.update_parameters(modelo)
+                    swa_scheduler.step()
+                else:
+                    scheduler.step()
+                optimizer.step()
+                running_loss += loss.item()   
+            
+        
+    
+
+            
+        #It reports on the loss for every 100 batches.
+        if i % n_batches_report == 99:
+            last_loss = running_loss / n_batches_report
+            running_loss = 0.
+    torch.optim.swa_utils.update_bn(train_loader, swa_model, device=device)
+    return last_loss
+
+def validate(modelo: GIN_classifier, loss_fun: torch.nn, loader: DataLoader, device: str = 'cpu'):
+    modelo.eval()
+    running_vloss = 0.0
+    correct = 0
+    for i, val_data in enumerate(loader):
+        
+        assert not val_data.is_cuda
+        if (device == 'cuda:0') | (device == 'cuda'):
+            val_data.to(device, non_blocking=True) 
+            assert val_data.is_cuda
+                           
+        #val_data.to(device, non_blocking=True) 
+
+        val_predictions = modelo(val_data)# Make predictions for this batch
+        pred            = val_predictions.argmax(dim=1)
+        
+        #val_loss    = loss_fun(predictions, val_data.y.long())
+        #running_vloss += val_loss.item()
+        correct += int((pred == val_data.y).sum())
+        
+    #avg_vloss = running_vloss / (i + 1)
+    return correct / len(loader.dataset)   
+  
+def train_and_validate(modelo,loss_fun,optimizer, EPOCHS ,train_loader,validation_loader, 
+                       validation_cycle:int = 4,
+                       save_state_dict:bool = False,save_entire_model:bool = False,verbose:bool= False,
+                       device:str='cpu', n_batches_report:int = 50, saving_path: str = '', tunning_mode:bool=False):
+    
+    modelo.to(device, non_blocking=True)
+    scaler        = torch.cuda.amp.GradScaler()
+    timestamp     = datetime.now().strftime('%d-%m-%Y_%Hh_%Mmin')    
+    swa_model     = torch.optim.swa_utils.AveragedModel(modelo).to(device, non_blocking=True)    
+    scheduler     = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=300)
+    swa_start     = 25
+    swa_scheduler = SWALR(optimizer, swa_lr=0.05)
+    epoch_number  = 0
+    best_vloss    = 1e-10
+    state_dict_path = None
+    model_path      = None
+    for epoch in tqdm.tqdm(range(EPOCHS)):
+
+        modelo.train(True)
+        avg_loss  = train_one_epoch(modelo, optimizer,train_loader, loss_fun, scaler, swa_start, swa_model, swa_scheduler, scheduler,
+                                    n_batches_report = n_batches_report, device=device) 
+        if epoch % validation_cycle == 0:
+            avg_vloss = validate(modelo, loss_fun, validation_loader, device=device )                
+        
+        
+        if avg_vloss > best_vloss:
+            best_vloss            = avg_vloss
+            best_val_state_dict   = copy.deepcopy(modelo.state_dict())
+            best_val_model        = copy.deepcopy(modelo)
+            if verbose:
+                print(f"new best_val_model {best_vloss = }")
+            
+            
+            if save_state_dict:
+                state_dict_path = saving_path+'/state_dicts/State_Dict_{}_{}_best_vloss_{}_epoch_{}'.format(
+                                                                modelo.__class__.__name__,timestamp, best_vloss, epoch_number)
+                torch.save(modelo.state_dict(), state_dict_path)
+                if verbose:
+                    print(f"best state_dict saved as {state_dict_path}")
+                    
+            if save_entire_model:
+                model_path = saving_path+'/models/Model_{}_{}_best_vloss_{}_epoch_{}.pt'.format(
+                                                                modelo.__class__.__name__,timestamp, best_vloss, epoch_number)
+                torch.save(best_val_model, model_path)
+                if verbose:
+                    print(f"best model saved as {model_path}")
+                
+                    
+        epoch_number += 1
+    #last_best_state_dict = copy.deepcopy(state_dict_path)
+    if tunning_mode:
+        return best_vloss
+        
+    return best_val_model, state_dict_path, model_path
+    
