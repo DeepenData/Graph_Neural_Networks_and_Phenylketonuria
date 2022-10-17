@@ -1,3 +1,4 @@
+from tabnanny import check
 from mlxtend.plotting import plot_decision_regions
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
@@ -196,19 +197,69 @@ def add_metabolite_concentration_features(grafo_nx_input,feature_data,feature_na
     assert len(grafo_nx.nodes(data=True)['r0399']['x']) == len(grafo_nx.nodes(data=True)['phe_L_c']['x'])
     return grafo_nx
 
+def graph_data_check(nx_G, pyg_graph, target_node):
 
-def make_PYG_graph_from_grafo_nx_onlyConcen(nx_G_in, target_node:str = 'phe_L_c'):
+    producto_idx      = list(nx_G.nodes()).index(target_node)
+    producto_features = nx_G.nodes()[target_node]['x']
+
+    if np.allclose(pyg_graph.x[producto_idx,:].numpy()[0:producto_features.__len__()], np.array(producto_features), 1e-7, 1e-10):
+        return True
+    else:
+        False
+    
+
+
+    
+def make_PYG_graph_from_grafo_nx(nx_G_in):
 
     nx_G               = copy.deepcopy(nx_G_in)
     pyg_graph          = from_networkx(nx_G)
     
     x_attribute     = nx.get_node_attributes(nx_G, "x")
     longest_feature = max(len(v) for k,v in x_attribute.items())
-    producto_idx = list(nx_G.nodes()).index(target_node)
-    producto_features = nx_G.nodes()[target_node]['x']
     assert pyg_graph.x.shape[1]  == pyg_graph.num_features == longest_feature # == flux_samples.shape[0]
-    assert np.allclose(pyg_graph.x[producto_idx,:].numpy()[0:producto_features.__len__()], np.array(producto_features), 1e-7, 1e-10)
+    assert graph_data_check(nx_G, pyg_graph, target_node = 'phe_L_c')
+    assert graph_data_check(nx_G, pyg_graph, target_node = 'r0399')
     assert not pyg_graph.is_directed()
-    assert not pyg_graph.has_isolated_nodes()
+    assert not pyg_graph.has_isolated_nodes()  
+    
     
     return pyg_graph
+
+def add_flux_features(nx_G_in,flux_samples, feature_data):
+
+    nx_G = copy.deepcopy(nx_G_in)
+
+    feature_length = len(nx_G.nodes(data=True)['r0399']['x']) 
+    flux_dict = flux_samples.sample(feature_length, replace=True).to_dict(orient = 'list')
+
+    x_attribute     = nx.get_node_attributes(nx_G, "x")
+    x_attribute.update(flux_dict)
+    nx.set_node_attributes(nx_G, x_attribute, 'x')
+    assert nx_G.nodes(data=True)['r0399']['x'] == flux_dict['r0399']
+    assert len(nx_G.nodes(data=True)['r0399']['x']) == len(nx_G.nodes(data=True)['phe_L_c']['x'])
+    assert nx_G.nodes(data=True)['phe_L_c']['x']  == feature_data['phe_L_c'].tolist() 
+    return nx_G
+
+from torch.utils.data import RandomSampler
+
+def train_classifiers_with_dataloader(loader):   
+    
+    contatenated = torch.Tensor()
+    labels_from_loader       = torch.Tensor()
+
+    for data in loader:  # Iterate in batches over the training dataset.
+            #data.to('cuda')
+            #out = model(data.x, data.edge_index, data.batch)
+            reshaped_batch     = data.x.reshape(data.y.shape[0], -1)
+            contatenated       = torch.cat((contatenated,reshaped_batch),0)        
+            labels_from_loader = torch.cat((labels_from_loader, data.y),0)
+            
+
+    non_zero_cols =  np.sum(contatenated.numpy() , 0) !=0
+    X_from_loader = contatenated[:,non_zero_cols]
+
+    reducer = umap.UMAP()
+    embedding = reducer.fit_transform(X_from_loader)
+    plot_classsifiers(embedding, labels_from_loader.to(int).numpy())
+    plt.show()
