@@ -260,8 +260,8 @@ def train_classifiers_with_dataloader(loader):
             labels_from_loader = torch.cat((labels_from_loader, data.y),0)
             
 
-    non_zero_cols =  np.sum(contatenated.numpy() , 0) !=0
-    X_from_loader = contatenated[:,non_zero_cols]
+    #non_zero_cols =  np.sum(contatenated.numpy() , 0) !=0
+    X_from_loader = contatenated#[:,non_zero_cols]
 
     reducer = umap.UMAP()
     embedding = reducer.fit_transform(X_from_loader)
@@ -465,3 +465,73 @@ def train_and_validate(modelo,loss_fun,optimizer, EPOCHS ,train_loader,validatio
         
     return best_val_model, state_dict_path, model_path
     
+from sklearn.model_selection import train_test_split
+
+    
+    
+    
+from torch.nn import Linear
+import torch.nn.functional as F
+from torch_geometric.nn import GCNConv
+from torch_geometric.nn import GIN
+from torch_geometric.nn import global_mean_pool
+import torch
+
+class GCN(torch.nn.Module):
+    def __init__(self, hidden_channels):
+        super(GCN, self).__init__()
+        torch.manual_seed(12345)
+        
+        self.GIN_layers =  GIN(in_channels= 1, hidden_channels= hidden_channels, num_layers= 4, 
+                               out_channels= hidden_channels, dropout=0.1,  jk=None, 
+                               act='LeakyReLU', act_first = True)   
+        
+        #self.conv1 = GCNConv(1, hidden_channels)
+        #self.conv2 = GCNConv(hidden_channels, hidden_channels)
+        #self.conv3 = GCNConv(hidden_channels, hidden_channels)
+        self.lin = Linear(hidden_channels, 2, bias=True)
+
+    def forward(self, x, edge_index, batch):
+        # 1. Obtain node embeddings 
+        #x = self.conv1(x, edge_index)
+        #x = x.relu()
+        x = self.GIN_layers(x, edge_index)
+        #x = F.dropout(x, p=0.1)
+        x = x.relu()
+        #x = self.conv3(x, edge_index)
+
+        # 2. Readout layer
+        x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
+
+        # 3. Apply a final classifier
+        
+        x = self.lin(x)
+        
+        return F.log_softmax(x, dim=1) #x
+
+class batch_loader():
+    
+    def __init__(self, graphs: list, batch_size: int  =1*32, num_samples:int = None, validation_percent:float = .3):
+        self.graphs = graphs
+        self.batch_size = batch_size
+        self.num_samples = num_samples
+        self.validation_percent = validation_percent
+        self.train_idxs, self.val_idxs = train_test_split(range(len(self.graphs)), test_size = self.validation_percent)     
+        
+    def get_train_loader(self):
+        train_subset = [self.graphs[i] for i in self.train_idxs]
+        sampler      = RandomSampler(
+        train_subset,
+        #num_samples= self.num_samples, 
+        replacement=False)   
+        
+        return  DataLoader(train_subset, batch_size= self.batch_size, sampler = sampler,  drop_last=True)
+    
+    def get_validation_loader(self):
+        validation_subset = [self.graphs[i] for i in self.val_idxs]
+        sampler      = RandomSampler(
+        validation_subset,
+        #num_samples= self.num_samples, 
+        replacement=False)   
+        
+        return  DataLoader(validation_subset, batch_size= self.batch_size, sampler = sampler,  drop_last=True)
