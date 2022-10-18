@@ -1,0 +1,36 @@
+view                  package:tibble                   R Documentation
+
+_V_i_e_w _a_n _o_b_j_e_c_t
+
+_D_e_s_c_r_i_p_t_i_o_n:
+
+     *[Experimental]*
+
+     Calls ‘utils::View()’ on the input and returns it, invisibly. If
+     the input is not a data frame, it is processed using a variant of
+     ‘as.data.frame(head(x, n))’. A message is printed if the number of
+     rows exceeds ‘n’. This function has no effect in noninteractive
+     sessions.
+
+_U_s_a_g_e:
+
+     view(x, title = NULL, ..., n = NULL)
+     
+_A_r_g_u_m_e_n_t_s:
+
+       x: The object to display.
+
+   title: The title to use for the display, by default the deparsed
+          expression is used.
+
+     ...: Unused, must be empty.
+
+       n: Maximum number of rows to display. Only used if ‘x’ is not a
+          data frame. Uses the ‘view_max’ option by default.
+
+_D_e_t_a_i_l_s:
+
+     The RStudio IDE overrides ‘utils::View()’, this is picked up
+     correctly.
+
+

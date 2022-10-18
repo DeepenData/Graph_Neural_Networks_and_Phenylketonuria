@@ -38,7 +38,7 @@ right_annotation <-
       Ce = anno_barplot(bar_width = 0.02,width = unit(.7, "cm"),  
       border = T, edge_scores[mask], gp = gpar(col = 'black', fill = "green"))) 
 
-suppressMessages(ht <- Heatmap(processed_data, row_km = 3))
+suppressMessages(ht <- Heatmap(processed_data, row_km = 4))
 
 
 ggsave(file.path(getwd(),'./results/figures/Heatmap_conected_Recon.png'), 
@@ -47,12 +47,20 @@ ggsave(file.path(getwd(),'./results/figures/Heatmap_conected_Recon.png'),
 
 heatmap_clusters <- waRRior::heatmap_extract_cluster(draw(ht), data_matrix[mask,],  which = "row")
 edges_clusters   <-  heatmap_clusters[['Cluster']]
+
+
+sum(edges_clusters == "1")
+sum(edges_clusters == "2")
+sum(edges_clusters == "3")
+sum(edges_clusters == "4")
+a_cluster = "4"
+
+data_cluster_genes <- data[mask,][edges_clusters == a_cluster,]
+view(data_cluster_genes)
 ###################################################################################
 ensembl    <- useMart("ensembl")
 Hs.ensembl <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
-a_cluster = "3"
 
-data_cluster_genes <- data[mask,][edges_clusters == a_cluster,]
 
 genes_list <- data_cluster_genes %>% mutate(genes = genes %>% str_extract_all('\\d+(?=\\.)')) %>% .[['genes']] 
 
