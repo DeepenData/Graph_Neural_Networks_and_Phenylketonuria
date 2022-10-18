@@ -18,7 +18,7 @@ library(org.Hs.eg.db)
 #library(BiocGenerics)
 library(reticulate)
 library(umap)
-data         <- read_csv("./results/data/results_for_R.csv") %>% dplyr::select(-c("...1")) #%>% dplyr::select(-c('0'))# %>% as.matrix()
+data         <- read_csv("./results/data/results_for_R_non_zero.csv") %>% dplyr::select(-c("...1")) #%>% dplyr::select(-c('0'))# %>% as.matrix()
 
 data_matrix  <- data %>% select_if(is.numeric) 
 #data_matrix <- data_matrix[,-1] 
@@ -27,7 +27,7 @@ rowSums(data_matrix) -> edge_scores
 
 
 
-edge_mask <- edge_scores > min(edge_scores); sum(edge_mask)
+edge_mask <- edge_scores > 0.1*min(edge_scores); sum(edge_mask)
 genes_mask <- data$genes != "['']";sum(genes_mask)
 mask <- edge_mask & genes_mask; sum(mask)
 
@@ -38,7 +38,7 @@ right_annotation <-
       Ce = anno_barplot(bar_width = 0.02,width = unit(.7, "cm"),  
       border = T, edge_scores[mask], gp = gpar(col = 'black', fill = "green"))) 
 
-suppressMessages(ht <- Heatmap(processed_data, row_km = 4))
+suppressMessages(ht <- Heatmap(processed_data, row_km = 2))
 
 
 ggsave(file.path(getwd(),'./results/figures/Heatmap_conected_Recon.png'), 
@@ -51,19 +51,46 @@ edges_clusters   <-  heatmap_clusters[['Cluster']]
 
 sum(edges_clusters == "1")
 sum(edges_clusters == "2")
-sum(edges_clusters == "3")
-sum(edges_clusters == "4")
-a_cluster = "4"
+#sum(edges_clusters == "3")
+#sum(edges_clusters == "4")
+#a_cluster = "2"
+#data_cluster_genes <- data[mask,][edges_clusters == a_cluster,]
 
-data_cluster_genes <- data[mask,][edges_clusters == a_cluster,]
-view(data_cluster_genes)
-###################################################################################
+get_entrez_IDs_cluster <- function(a_cluster) {
+                                 data_cluster_genes <- data[mask,][edges_clusters == a_cluster,]
+                                 genes_list <- data_cluster_genes %>% mutate(genes = genes %>% str_extract_all('\\d+(?=\\.)')) %>% .[['genes']] 
+                                 entrez_IDs <- genes_list%>% unlist() %>% unique()
+                                 return(entrez_IDs)
+                                 }
+entrez_IDs_cluster_1 <- get_entrez_IDs_cluster("1")
+entrez_IDs_cluster_2 <- get_entrez_IDs_cluster("2")
+
+entrez_IDs_list <- list(entrez_IDs_cluster_1, entrez_IDs_cluster_2)
+
+entrez_IDs_list%>% purrr::set_names(c("1", "2"))%>%compareCluster(fun='enrichPathway', pvalueCutoff=1e-4) -> panel_compareCluster
+panel_compareCluster %>% dotplot -> enrichPathway_dotplot
+ggsave(file.path(getwd(),'./results/figures/enrichPathway_dotplot.png'), enrichPathway_dotplot, dpi = 110, width = 7, height = 5 )
+
+
+
+entrez_IDs_list%>% purrr::set_names(c("1", "2"))%>%compareCluster(fun='enrichKEGG', pvalueCutoff=1e-2) -> panel_compareCluster
+panel_compareCluster %>% dotplot -> enrichKEGG_dotplot
+ggsave(file.path(getwd(),'./results/figures/enrichKEGG_dotplot.png'), enrichKEGG_dotplot, dpi = 110, width = 7, height = 5 )
+
+
+library(DOSE)
+entrez_IDs_list%>% purrr::set_names(c("1", "2"))%>%compareCluster(fun='enrichDGN', pvalueCutoff=5e-2) -> panel_compareCluster
+panel_compareCluster %>% dotplot -> enrichDGN_dotplot
+ggsave(file.path(getwd(),'./results/figures/enrichDGN_dotplot.png'), enrichDGN_dotplot, dpi = 110, width = 7, height = 5 )
+#########################################
+#########################################
+#######################################
+
+
+################
+###################
 ensembl    <- useMart("ensembl")
 Hs.ensembl <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
-
-
-genes_list <- data_cluster_genes %>% mutate(genes = genes %>% str_extract_all('\\d+(?=\\.)')) %>% .[['genes']] 
-
 genes_symbols <- list()
 idx           <- 0 
 
@@ -94,26 +121,7 @@ ggsave('./results/figures/table_rxns_and_central_genes_symbols.png', stable.p, d
 
 ###################################################################################
 ###################################################################################
-entrez_IDs <- genes_list%>% unlist() %>% unique()
 
-list(entrez_IDs, entrez_IDs) %>% purrr::set_names(c("ff", "ll"))%>%compareCluster(fun='enrichPathway', pvalueCutoff=1e-2) -> panel_compareCluster
-panel_compareCluster %>% dotplot -> enrichPathway_dotplot
-ggsave(file.path(getwd(),'./results/figures/enrichPathway_dotplot.png'), enrichPathway_dotplot, dpi = 110, width = 7, height = 5 )
-
-
-
-list(entrez_IDs, entrez_IDs)%>% purrr::set_names(c("ff", "ll"))%>%compareCluster(fun='enrichKEGG', pvalueCutoff=1e-2) -> panel_compareCluster
-panel_compareCluster %>% dotplot -> enrichKEGG_dotplot
-ggsave(file.path(getwd(),'./results/figures/enrichKEGG_dotplot.png'), enrichKEGG_dotplot, dpi = 110, width = 7, height = 5 )
-
-
-library(DOSE)
-list(entrez_IDs, entrez_IDs)%>% purrr::set_names(c("ff", "ll"))%>%compareCluster(fun='enrichDGN', pvalueCutoff=1e-5) -> panel_compareCluster
-panel_compareCluster %>% dotplot -> enrichDGN_dotplot
-ggsave(file.path(getwd(),'./results/figures/enrichDGN_dotplot.png'), enrichDGN_dotplot, dpi = 110, width = 7, height = 5 )
-#########################################
-#########################################
-#######################################
 
 temp         <- getBM(attributes=c('hgnc_symbol', 'entrezgene_description'),filters ='entrezgene_id',values = entrez_IDs, mart = Hs.ensembl)
 
