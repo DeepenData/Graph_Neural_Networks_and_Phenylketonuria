@@ -1,0 +1,53 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(arrow)
+library(tidyverse)
+library(ComplexHeatmap) 
+setwd("/DeepenData/Repos/geometric_cobra")
+filtered_graph_weights <- read_parquet("./results/data/filtered_graph_weights.parquet.gzip")
+
+
+
+data_sample <- function(data, n_rows, n_cols){
+                                              return(
+                                                sample_n(data, n_rows)[, c(
+                                                  sample(1:ncol(filtered_graph_weights) , n_cols), which(names(filtered_graph_weights) == "Label")
+                                                  )]
+                                              )
+}
+
+data_subset <- filtered_graph_weights %>% data_sample(30,30)
+labels      <- data_subset$Label
+data        <- data_subset %>% select(-c("Label"))%>% tidyr::as_tibble()
+ht <- Heatmap(data %>% as.matrix(), row_km = 2)
+```
+
+
+```{r}
+
+draw(ht)
+```
+
+
+
+
+```{r}
+library(ComplexHeatmap) 
+
+
+
+ht <- Heatmap(data %>% as.matrix(), row_km = 2)
+ggsave(file.path(getwd(),'./results/figures/Heatmap_conected_Recon.png'), 
+                  ggplotify::as.ggplot(ht), dpi = 90, width = 3, height = 19 )
+
+```
+
+
+```{r}
+draw(ht)
+```
+

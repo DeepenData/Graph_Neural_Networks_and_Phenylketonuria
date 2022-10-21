@@ -66,7 +66,8 @@ import umap
 from sklearn import preprocessing
 import gc
 import tqdm
- 
+from torch_scatter import scatter
+
 def plot_classsifiers(X, y):
     
 
@@ -586,3 +587,40 @@ class GIN_classifier_to_explain(torch.nn.Module):
         x     = self.FC2(self.leakyrelu(x))
         x     = x.reshape(self.batch_size, 2)
         return   torch.nn.functional.log_softmax(x, dim=1).squeeze()
+
+class GIN_classifier_to_explain_v2(torch.nn.Module):
+    
+    def __init__(
+        self, 
+        n_classes: int,
+        n_nodes : int, 
+        num_features : int, 
+        out_channels: int = 8,
+        dropout : float = 0.05, 
+        hidden_dim : int = 8, 
+        LeakyReLU_slope : float = 0.01,
+        num_layers: int = 2
+    ):
+        super(GIN_classifier_to_explain_v2, self).__init__() # TODO: why SUPER gato? 
+        self.n_nodes = n_nodes
+        self.n_classes = n_classes
+        self.dropout = dropout
+        self.num_features = num_features
+        self.out_channels = out_channels
+        self.GIN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+                               out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False)              
+        self.FC1          = Linear(in_features=out_channels, out_features=1, bias=True)
+        self.FC2          = Linear(in_features= self.n_nodes, out_features=self.n_classes, bias=True)
+        #self.FC          = Linear(in_features=out_channels, out_features=1, bias=True)           
+           
+        self.leakyrelu  = LeakyReLU(LeakyReLU_slope)#.to('cuda')
+    def forward(self, x, edge_index, batch):
+        batch_size = batch.unique().__len__()
+
+        x     = self.GIN_layers(x, edge_index)
+        x     = x.reshape(batch_size, self.n_nodes, self.out_channels)
+        x     = self.FC1(self.leakyrelu(x))
+        x     = x.reshape(batch_size,  self.n_nodes)       
+        x     = self.FC2(self.leakyrelu(x))    
+
+        return torch.nn.functional.log_softmax(x, dim=1)
