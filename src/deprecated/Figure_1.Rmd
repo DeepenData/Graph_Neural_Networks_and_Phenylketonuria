@@ -1,0 +1,125 @@
+---
+title: "Figure 1: Network representations of the neuron-astrocyte metabolism and nodal contributions, C-F subplots"
+output: html_notebook
+author: "Alejandro Javier Acevedo Aracena, PhD - a.acevedo.aracena@gmail.com"
+date: "May 17th, 2021"
+---
+Set paths
+```{r message=FALSE, warning=FALSE}
+figure <- 'Figure_1'
+local_working_directory <- "~/AA_PostDoc/Acevedo_et_al_2021_neuron_astrocyte_metabolism"
+file.path(local_working_directory,figure)      -> figure_folder_path
+file.path(local_working_directory,'aa_functions.R') -> source_path
+```
+Set the environmental variables and functions from source code, and from data.
+```{r message=FALSE, warning=FALSE}
+source(source_path)
+all_data          <-readr::read_rds(file.path(local_working_directory,'Data/all_data.rds'))
+only_centralities <- readr::read_rds(file.path(local_working_directory,'Data/only_centralities.rds'))
+get_nodes_by_type(all_data)                -> data_by_node_type
+get_nodes_vs_subsystems(data_by_node_type) -> nodes_vs_subsystems
+```
+Generate panels
+```{r message=FALSE, warning=FALSE}
+generate_subplots(nodes_vs_subsystems) -> subplots
+bottom_panel   <- ggarrange(subplots$NnAs,subplots$AnNs, subplots$NnNs,  subplots$AnAs, ncol = 2, nrow = 2,  labels = c('c','e','d','f'), widths = c(1.07,1), heights = c(1,1.2))
+upper_panel    <-  ggarrange(NA,NA, ncol = 2, nrow = 1,  labels = c("a","b"))
+full_panel     <- ggarrange(upper_panel, bottom_panel, nrow = 2, heights = c(.7,.3))
+#ggsave(file= file.path(figure_folder_path ,"panel_without_graphs.png"), plot=full_panel, width=8, height=8, dpi = 500)
+```
+
+```{r}
+b_c_d_e <- ggarrange(subplots$NnAs,subplots$AnNs, subplots$NnNs,  subplots$AnAs, ncol = 2, nrow = 2,  labels = c('b','d','c','e'), widths = c(1.07,1), heights = c(1,1.2))
+
+
+
+upper_top <- ggarrange(NULL, b_c_d_e, ncol = 2, nrow = 1, widths = c(.7,.72), labels = c("a",""))
+upper_top
+```
+Set paths
+```{r message=FALSE, warning=FALSE}
+figure <- 'Figure_2'
+local_working_directory <- "~/AA_PostDoc/Acevedo_et_al_2021_neuron_astrocyte_metabolism"
+file.path(local_working_directory,figure)      -> figure_folder_path
+file.path(local_working_directory,'aa_functions.R') -> source_path
+```
+
+
+```{r message=FALSE, warning=FALSE}
+source(source_path)
+all_data          <-readr::read_rds(file.path(local_working_directory,'Data/all_data.rds'))
+only_centralities <- readr::read_rds(file.path(local_working_directory,'Data/only_centralities.rds'))
+```
+
+
+```{r message=FALSE, warning=FALSE}
+get_total_centralities(only_centralities)-> total.abs.centrality
+get_correlation_matrices(only_centralities)-> my.corr.matrix
+get_node_types(all_data) -> node_types
+get_node_IDs(all_data) -> node_ids
+rownames(my.corr.matrix) <- node_ids
+colnames(my.corr.matrix) <- node_ids
+generate_heatmap(my.corr.matrix, total.abs.centrality, node_types) -> ht
+my_heatmap = grid.grabExpr(draw(ht))
+get_heatmap_data(ht,node_types, all_data) -> heatmap_data
+my_comparisons <- list( c("Neuronal_cluster", "Astrocytic_cluster"), 
+                        c("Neuronal_cluster", "Neuron_vs_Astrocyte"), 
+                        c("Astrocytic_cluster", "Neuron_vs_Astrocyte") )
+plot_quads_corrs( heatmap_data$quads, my_comparisons) -> corr_comparisons
+get_pca(my.corr.matrix, total.abs.centrality, node_types) -> pca_node_centrality
+```
+
+##### compare neural versus astrocytic absolute vitality       
+```{r}
+cbind(total.abs.centrality,node_types) %>% as.data.frame %>% 
+  mutate(cell = if_else(str_detect(node_types, '(A|a)stro'), "Astrocyte", "Neuron")) %>% 
+  select(c(total.abs.centrality,cell)) %>% purrr::set_names("AV","cell") -> hola
+library(magrittr)
+hola$AV %<>% as.numeric()
+
+library(ggplot2)
+# Basic stripchart
+compare <-list()
+compare[[1]] <- c("Astrocyte", "Neuron")
+
+ggplot(hola, aes(x=cell, y=AV, fill=cell)) + 
+  geom_violin(trim=F, color="azure4") + geom_boxplot(width=0.02, fill="white") + theme(legend.position="none")+ 
+ scale_fill_manual(values=c("cyan4", "brown3")) + stat_compare_means( vjust= -1., hjust= 1.2)
+
+
+```
+
+
+```{r message=FALSE, warning=FALSE,  fig.height=8, fig.width=9}
+upper_panel <- ggarrange(my_heatmap  , ncol = 1, widths = c(1),  labels = c('f'))
+bottom_panel <- ggarrange( corr_comparisons,pca_node_centrality , NA, ncol = 3, widths  = c(.16,.55,.33) , labels = c('g','h',"i"),
+                                                 hjust = 0, vjust = 1)
+panel_without_graph <-  ggarrange(upper_panel, bottom_panel, nrow = 2, heights = c(.6,.3))
+panel_without_graph
+```
+
+
+
+```{r message=FALSE, warning=FALSE,  fig.height=10, fig.width=15}
+ggarrange( upper_top,panel_without_graph, nrow = 2, ncol = 1, heights = c(.3,1)) -> fusion_panel_without_graph
+path_figure_1 = "~/AA_PostDoc/Acevedo_et_al_2021_neuron_astrocyte_metabolism/Figure_1"
+
+ggsave(file.path(path_figure_1,"fusion_panel_without_graph.png"),   fusion_panel_without_graph ,height=11, width=11, bg = "white")
+```
+
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
