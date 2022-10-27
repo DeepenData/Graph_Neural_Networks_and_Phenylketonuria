@@ -236,7 +236,7 @@ def add_flux_features(nx_G_in,flux_samples, feature_data):
     nx_G = copy.deepcopy(nx_G_in)
 
     feature_length = len(nx_G.nodes(data=True)['r0399']['x']) 
-    flux_dict = flux_samples.sample(feature_length, replace=True).to_dict(orient = 'list')
+    flux_dict = flux_samples.sample(feature_length, replace=False).to_dict(orient = 'list')
 
     x_attribute     = nx.get_node_attributes(nx_G, "x")
     x_attribute.update(flux_dict)
