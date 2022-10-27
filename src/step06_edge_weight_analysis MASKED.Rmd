@@ -20,8 +20,8 @@ library(ReactomePA)
 library(org.Hs.eg.db)
 library(fastcluster)
 setwd("/DeepenData/Repos/geometric_cobra")
-df <- read_csv("./results/data/Masked_results_for_R.csv") %>% dplyr::select(-c("...1"))
-labels <- read_csv("./results/data/results_for_R_labels.csv") %>%  dplyr::select(-c("...1")) %>% .[[1]]
+df <- read_csv("./results/data/data_for_R/Masked_results_for_R.csv") %>% dplyr::select(-c("...1"))
+labels <- read_csv("./results/data/data_for_R/Mask_train_labels.csv") %>%  dplyr::select(-c("...1")) %>% .[[1]]
 edge_weights_x_patients <- df%>%  dplyr::select_if(is.numeric)
 edges_genes   <- df%>%  dplyr::select_if(is.character)
 n_edges <- nrow(edges_genes)
@@ -32,7 +32,7 @@ n_patients <- length(labels)
 
 
 ```{r}
-#view(edges_genes)
+view(edges_genes)
 
 ```
 
@@ -59,8 +59,8 @@ right_annotation <- rowAnnotation(Group = labels_SAMPLE,
 top_annotation <- columnAnnotation(`Score` = anno_lines( pch = 26, size = unit(5, "mm"), gp = gpar(col = 'red4'),
                                                         edge_scores, height = unit(1.5, "cm")))
 
-bottom_annotation <- HeatmapAnnotation(foo = anno_block(labels = c("C1", "C2", "C3", "C4"),labels_gp = gpar(col = "darkslategray", fontsize = 9),
-                                                        gp = gpar(fill = c("azure2","azure2","azure2","azure2"))))
+bottom_annotation <- HeatmapAnnotation(foo = anno_block(labels = c("C1", "C2", "C3"),labels_gp = gpar(col = "darkslategray", fontsize = 9),
+                                                        gp = gpar(fill = c("azure2","azure2","azure2"))))
 #densityHeatmap(t(processed_data),  ylim = c(0.02, 0.5),  ylab = "some values", show_quantiles = F, mc.cores =20, cores = 20,
 #               cluster_columns = TRUE,  clustering_distance_columns  =  function(x) fastcluster::hclust(dist(x), "euclidean"))  %v%
 ht <- Heatmap(t(processed_data),
@@ -71,7 +71,7 @@ ht <- Heatmap(t(processed_data),
               name = "Edge weight",
               border = TRUE,
               row_km = 2, 
-              column_km = 4,  
+              column_km = 3,  
               row_gap = unit(2, "mm"),
               column_gap = unit(2, "mm"),
               width = unit(15, "cm"),
@@ -95,7 +95,7 @@ heatmap_clusters <- waRRior::heatmap_extract_cluster(draw(ht), t(processed_data)
 
 ```{r}
 heatmap_clusters %>% count(Cluster, sort = TRUE) %>% .[['Cluster']] -> clusters_descending_sorted
-clusters_descending_sorted[2:length(clusters_descending_sorted)] -> real_clusters
+clusters_descending_sorted[1:length(clusters_descending_sorted)] -> real_clusters
 get_entrez_IDs_cluster <- function(a_cluster) {
   
                                                 edges_clusters   <-  heatmap_clusters[['Cluster']]
@@ -107,7 +107,7 @@ get_entrez_IDs_cluster <- function(a_cluster) {
 
 
 clusters <- unique(heatmap_clusters[['Cluster']])
-lapply(clusters, get_entrez_IDs_cluster) %>% purrr::set_names(clusters) %>% .[real_clusters] %>% purrr::set_names(c("C4", "C2", "C1")) -> clusters_list
+lapply(clusters, get_entrez_IDs_cluster) %>% purrr::set_names(clusters) %>% .[real_clusters]  -> clusters_list#%>% purrr::set_names(c("C3", "C2", "C1")) -> clusters_list
 ```
 
 ```{r fig.height=3, fig.width=4, message=FALSE, warning=FALSE}
@@ -162,7 +162,7 @@ temp         <- getBM(attributes=c('hgnc_symbol',"entrezgene_id", 'entrezgene_de
 ```
 
 
-```{r fig.height=9, fig.width=12, message=FALSE, warning=FALSE}
+```{r fig.height=11, fig.width=12, message=FALSE, warning=FALSE}
 base_size =6
 my_table  <- ggtexttable(temp, rows = NULL,
                           theme = ttheme('mBlue',
