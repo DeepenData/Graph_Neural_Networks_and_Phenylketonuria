@@ -1,0 +1,129 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+setwd("/DeepenData/Repos/geometric_cobra")
+
+oversampled_augmented_metabolite_data <- arrow::read_parquet("./results/data/oversampled_augmented_metabolite_data.parquet.gzip")
+
+
+
+metabolite_data <- rename(oversampled_augmented_metabolite_data, Condicion = label) %>% dplyr::mutate(Condicion = if_else(Condicion== 1, 'PKU', 'Control'))
+```
+
+
+```{r message=FALSE, warning=FALSE}
+setwd("/DeepenData/Repos/geometric_cobra")
+library(tidyverse)
+library(ggpubr)
+#metabolite_data <- read_csv("./results/data/metabolite_data.csv")
+ACs_PKU <- metabolite_data %>% dplyr::filter(Condicion=='PKU') %>% select_if(is.numeric) %>% select(dplyr::matches('C\\d+')) %>% select(!dplyr::matches('suac'))
+AAs_PKU <- metabolite_data %>% dplyr::filter(Condicion=='PKU') %>% select_if(is.numeric) %>% select(!dplyr::matches('C\\d+')) %>% select(!dplyr::matches('suac'))
+
+ACs_Control <- metabolite_data %>% dplyr::filter(Condicion=='Control') %>% select_if(is.numeric) %>% select(dplyr::matches('C\\d+')) %>% select(!dplyr::matches('suac'))
+AAs_Control <- metabolite_data %>% dplyr::filter(Condicion=='Control') %>% select_if(is.numeric) %>% select(!dplyr::matches('C\\d+')) %>% select(!dplyr::matches('suac'))
+
+
+
+
+```
+
+
+```{r fig.height=4, fig.width=7, message=FALSE, warning=FALSE}
+library(ComplexHeatmap)
+
+plot_densityHeatmap <- function(df, title){
+    return(
+   ggplotify::as.ggplot(densityHeatmap(df %>% scale , ylim = c(-2, 2), cluster_columns = TRUE, title = title, ylab = "",
+                                                     title_gp = gpar(fontsize = 8), tick_label_gp = gpar(fontsize = 7), quantile_gp = gpar(fontsize = 7),
+                                                     column_names_gp = gpar(fontsize = 7),column_names_rot = 60 )) 
+    )}
+
+
+AAs_Control_plot <-AAs_Control  %>% plot_densityHeatmap("")
+ACs_Control_plot <-ACs_Control   %>% plot_densityHeatmap("")
+AAs_PKU_plot <- AAs_PKU   %>% plot_densityHeatmap("")
+ACs_PKU_plot <- ACs_PKU   %>% plot_densityHeatmap("")
+```
+
+
+```{r fig.height=4, fig.width=7, message=FALSE, warning=FALSE}
+densityHeatmap_panel <- ggarrange(ACs_Control_plot,ACs_PKU_plot,AAs_Control_plot,AAs_PKU_plot, ncol = 1 ,  common.legend = T, heights = c(1,1,.9,.9))
+densityHeatmap_panel
+```
+
+
+```{r fig.height=4, fig.width=7, message=FALSE, warning=FALSE}
+library(umap)
+
+data_control <-cbind(AAs_Control,ACs_Control)
+data_PKU     <- cbind(AAs_PKU,ACs_PKU)
+data_control["Group"] <- "Control"
+data_PKU["Group"] <- "PKU"
+
+data <- rbind(data_PKU,data_control)
+
+```
+
+```{r}
+UMAPM <- umap(data  %>% select_if(is.numeric) %>% as.matrix(), n_neighbors = 50, scale = T, n_threads = 20, fast_sgd = F, metric = 'cosine', spread = 1)
+```
+
+
+```{r}
+p <- ggplot(as_tibble(UMAPM$layout), aes(V1, V2, colour= data[["Group"]]))
+UMAP_reduction <-  p + geom_point(size= .2) + xlab('UMAP dimension 1') + ylab('UMAP dimension 2')+
+  scale_colour_manual(values = c("blue4", "gold4"))+ theme(text = element_text(size = 9))   +
+     guides(color = guide_legend(override.aes = list(size = 3) ) )+guides(color = guide_legend(title = "Group", override.aes = list(size = 3) )) 
+UMAP_reduction
+```
+
+
+
+```{r fig.height=8, fig.width=12}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+img <- png::readPNG("./results/figures/tests/recon_metabolites.png")
+
+graph <- ggplot() + background_image(img)
+
+UMAP_plus_graph <- ggarrange(UMAP_reduction, graph, ncol = 1, heights = c(.7, 1))
+
+
+ggarrange(densityHeatmap_panel, UMAP_plus_graph, widths = c(1, .75), ncol = 2) -> panel
+
+
+```
+
+
+
+
+
+```{r}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+ggsave("./results/figures/tests/panel.png", panel, dpi = 100, width = 11, height=8, bg = 'white', device = 'png')
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

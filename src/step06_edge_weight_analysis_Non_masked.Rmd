@@ -24,7 +24,7 @@ edge_weights_x_patients <- df%>%  dplyr::select_if(is.numeric)
 edges_genes   <- df%>%  dplyr::select_if(is.character)
 n_edges <- nrow(edges_genes)
 n_patients <- length(labels)
-labels
+
 ```
 
 
@@ -96,7 +96,7 @@ heatmap_clusters <- waRRior::heatmap_extract_cluster(draw(ht), t(processed_data)
 heatmap_clusters %>% count(Cluster, sort = TRUE) %>% .[['Cluster']] -> clusters_descending_sorted
 
 
-clusters_descending_sorted[2:length(clusters_descending_sorted)] -> real_clusters
+clusters_descending_sorted[1:length(clusters_descending_sorted)] -> real_clusters
 
 
 ```
@@ -123,12 +123,12 @@ lapply(clusters, get_entrez_IDs_cluster) %>% purrr::set_names(clusters) %>% .[re
 clusters_list %>% compareCluster(fun='enrichGO', pvalueCutoff=1e-7, OrgDb = 'org.Hs.eg.db',ont="BP", qvalueCutoff=1e-7)-> enrich_output
 
 
-enrich_output %>% dotplot(showCategory = 10, font.size = 9, label_format =40) ->enrichGO 
+enrich_output %>% dotplot(showCategory = 5, font.size = 9, label_format =40) ->enrichGO 
 ```
 
 
 
-```{r fig.height=3, fig.width=4}
+```{r fig.height=4, fig.width=8}
 
 
 
@@ -143,11 +143,11 @@ enrich_output %>% dotplot(showCategory = 7, font.size = 9, label_format =40) -> 
 
 
 
-```{r fig.height=3, fig.width=4}
-clusters_list%>% compareCluster(fun='enrichDGN', pvalueCutoff=1e-2)-> enrich_output
+```{r fig.height=7, fig.width=8}
+clusters_list%>% compareCluster(fun='enrichDGN', pvalueCutoff=1e-3)-> enrich_output
 
 
-enrich_output %>% dotplot(showCategory = 6, font.size = 9, label_format =40) -> enrichDGN
+enrich_output %>% dotplot(showCategory = 5, font.size = 9, label_format =40) -> enrichDGN
 ```
 
 
@@ -194,6 +194,7 @@ HTMP
 
 
 panel_non_MASKED <-  ggarrange(HTMP, enrich_panel, heights = c(1,.9) , ncol = 1)
+panel_non_MASKED
 ```
 
 
