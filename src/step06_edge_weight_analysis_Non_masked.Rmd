@@ -172,7 +172,7 @@ temp         <- getBM(attributes=c('hgnc_symbol',"entrezgene_id", 'entrezgene_de
 ```
 
 
-```{r fig.height=9, fig.width=12, message=FALSE, warning=FALSE}
+```{r fig.height=12, fig.width=12, message=FALSE, warning=FALSE}
 base_size =6
 my_table  <- ggtexttable(temp, rows = NULL,
                           theme = ttheme('mBlue',
