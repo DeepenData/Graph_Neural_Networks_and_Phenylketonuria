@@ -92,7 +92,7 @@ ht <- Heatmap(t(processed_data),
 #        bottom_annotation = bottom_annotation)
 
 
-heatmap_clusters <- waRRior::heatmap_extract_cluster(draw(ht, heatmap_legend_side = "right",  annotation_legend_side = "right"), t(processed_data),  which = "column")
+heatmap_clusters <- waRRior::heatmap_extract_cluster(draw(ht), t(processed_data),  which = "column")
 
 ```
 
@@ -101,6 +101,7 @@ heatmap_clusters %>% count(Cluster, sort = TRUE) %>% .[['Cluster']] -> clusters_
 clusters_descending_sorted[1:length(clusters_descending_sorted)] -> real_clusters
 heatmap_clusters %>% count(Cluster, sort = TRUE) 
 ```
+
 
 
 ```{r}
@@ -118,6 +119,146 @@ clusters <- unique(heatmap_clusters[['Cluster']])
 lapply(clusters, get_entrez_IDs_cluster) %>% purrr::set_names(clusters) %>% .[real_clusters]  -> clusters_list#%>% purrr::set_names(c("C3", "C2", "C1")) -> clusters_list
 ```
 
+
+
+
+```{r fig.height=9, fig.width=12, message=FALSE, warning=FALSE}
+ensembl    <- useMart("ensembl")
+Hs.ensembl <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
+genes_symbols <- list()
+#idx           <- 0
+#entrez_IDs <- clusters_list %>% unlist() %>% as.vector() %>% unique()
+
+```
+
+
+```{r fig.height=9, fig.width=12, message=FALSE, warning=FALSE}
+
+
+#searchAttributes(Hs.ensembl , 'GO') #'name_1006'
+
+
+
+get_functional_annots <- function(entrez_IDs, transporters){
+                                   temp <- getBM(attributes=c('hgnc_symbol',"entrezgene_id", 'entrezgene_description'),filters ='entrezgene_id',values =entrez_IDs, mart = Hs.ensembl)
+                                   if(transporters){
+                                     temp %<>% filter(str_detect(entrezgene_description,regex( '(solute.+?carrier)|transporter', ignore_case = T))) 
+                                   }
+                                   else {  temp %<>% filter(!str_detect(entrezgene_description,regex( '(solute.+?carrier)|transporter', ignore_case = T))) }
+                                   
+                                   
+                                   
+                                   return(arrange(temp, hgnc_symbol) %>% purrr::set_names(c("Symbol", "Entrez ID", "Description")))}
+
+
+
+ #%>% as_tibble() %>% nest(name_1006= name_1006) %>% mutate(name_1006 = name_1006) -> nested_df
+
+transporters <- purrr::map2(clusters_list, c(T,T,T), get_functional_annots)
+reactions    <- purrr::map2(clusters_list, c(F,F,F), get_functional_annots)
+
+
+reactions
+```
+
+
+```{r fig.height=4.7, fig.width= 8}
+base_size =6
+table_1  <- ggtexttable(reactions$`1`, rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "#8cc257", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill = c("#e8f3de", "#d3e8bb"))
+                        )) %>%
+                              tab_add_title(text = 'Table 1.', face = "bold", size = 8, padding = unit(.3, "line"), hjust = 0.1) %>%
+                              tab_add_footnote(text = "(Cluster 1)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+
+table_2  <- ggtexttable(reactions$`2`, rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "#8cc257", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill = c("#e8f3de", "#d3e8bb"))
+                        ))  %>%
+                                    tab_add_title(text = 'Table 2.', face = "bold", size = 8, padding = unit(.3, "line"), hjust = 0.1) %>%
+                                    tab_add_footnote(text = "(Cluster 2)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+table_3  <- ggtexttable(reactions$`3`, rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "#8cc257", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill = c("#e8f3de", "#d3e8bb"))
+                        ))%>%
+                                    tab_add_title(text = 'Table 3.', face = "bold", size = 8, padding = unit(.3, "line"), hjust = 0.1) %>%
+                                    tab_add_footnote(text = "(Cluster 3)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+
+left_tables <-  ggarrange(table_1, table_2, ncol = 1, heights = c(1, 1),  labels = c("", ""),  hjust=0, vjust = 3,  font.label=list(color="black",size=9))
+
+reactions_genes_tables <- ggarrange(left_tables,  table_3, labels = c("", ""), widths = c(1, 1.8),  hjust=0, vjust = 1.1,  font.label=list(color="black",size=9))
+
+
+reactions_genes_tables #%>% annotate_figure(top = text_grob(bquote("Reactions associated genes"), rot = 0, color = "seagreen4"))
+
+
+
+
+```
+
+
+```{r}
+
+
+purrr::map2(reactions, c("Entrez ID","Entrez ID","Entrez ID"), pull) %>% 
+  compareCluster(fun='enrichKEGG', pvalueCutoff=1e-2, qvalueCutoff=1e-2)-> enrich_output
+enrich_output %>% dotplot(showCategory = 10, font.size = 9, label_format =50)+
+   theme( 
+    legend.text=element_text(size=6),
+    legend.position = "bottom",
+    #legend.box = "vertical",
+    text = element_text(size=6)) -> enrichKEGG
+```
+
+```{r fig.height=4, fig.width=8}
+purrr::map2(reactions, c("Entrez ID","Entrez ID","Entrez ID"), pull) %>% compareCluster(fun='enrichDGN', pvalueCutoff=1e-2,  qvalueCutoff=1e-2)-> enrich_output
+enrich_output %>% dotplot(showCategory = 5, font.size = 9, label_format =40)+
+   theme( 
+    legend.text=element_text(size=6),
+    legend.position = "bottom",
+    #legend.box = "vertical",
+    text = element_text(size=6))-> enrichDGN
+enrichDGN
+```
+
+```{r}
+
+
+purrr::map2(transporters, c("Entrez ID","Entrez ID","Entrez ID"), pull) %>% 
+  compareCluster(fun='enrichKEGG', pvalueCutoff=5e-2, qvalueCutoff=5e-2)-> enrich_output
+enrich_output %>% dotplot(showCategory = 10, font.size = 9, label_format =50)+
+   theme( 
+    legend.text=element_text(size=6),
+    legend.position = "bottom",
+    #legend.box = "vertical",
+    text = element_text(size=6)) -> enrichKEGG
+```
+```{r fig.height=4, fig.width=8}
+purrr::map2(transporters, c("Entrez ID","Entrez ID","Entrez ID"), pull) %>% compareCluster(fun='enrichDGN', pvalueCutoff=1e-2,  qvalueCutoff=1e-2)-> enrich_output
+enrich_output %>% dotplot(showCategory = 5, font.size = 9, label_format =40)+
+   theme( 
+    legend.text=element_text(size=6),
+    legend.position = "bottom",
+    #legend.box = "vertical",
+    text = element_text(size=6))-> enrichDGN
+enrichDGN
+```
+####################################################################################################################################################################################################################################
 
 ```{r fig.height=4, fig.width=8}
 
@@ -206,6 +347,17 @@ clusters_list
 
 ```{r fig.height=9, fig.width=12, message=FALSE, warning=FALSE}
 temp         <- getBM(attributes=c('hgnc_symbol',"entrezgene_id", 'entrezgene_description'),filters ='entrezgene_id',values = entrez_IDs, mart = Hs.ensembl)
+```
+
+
+```{r fig.height=3, fig.width=7, message=FALSE, warning=FALSE}
+
+
+
+reaction_genes <- temp %>% filter(str_detect(hgnc_symbol, 'SLC')) 
+#enrichMKEGG()
+#enrichKEGG(reaction_genes,  pvalueCutoff=5e-2,  qvalueCutoff=5e-2)  %>%  dotplot
+enrichDGN(reaction_genes %>% .[['entrezgene_id']],  pvalueCutoff=1e-2,  qvalueCutoff=1e-2)   %>%  dotplot
 
 ```
 
