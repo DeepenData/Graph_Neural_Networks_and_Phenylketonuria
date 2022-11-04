@@ -21,3 +21,6 @@ COBRA_models_and_graphs/
 **/*.hdf5
 **/*.pt
 **/*.pth
+**/*.mat
+**/*.gexf
+**/*.gephi
