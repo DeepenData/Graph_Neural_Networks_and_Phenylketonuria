@@ -41,7 +41,7 @@ patients_mask <- sample(c(T,F), n_patients, replace = T, prob = c(.5, 0.5))
 edge_weights_x_patients_SAMPLE <- edge_weights_x_patients[edges_mask,patients_mask]
 labels_SAMPLE <- labels[patients_mask]
 edges_genes_SAMPLE <- edges_genes[edges_mask,]
-processed_data <- edge_weights_x_patients_SAMPLE %>% as.matrix() %>% scale %>% rescale
+processed_data <- edge_weights_x_patients_SAMPLE %>% as.matrix() %>% rescale
 dim(processed_data)
 ```
 
@@ -144,7 +144,7 @@ enrich_output %>% dotplot(showCategory = 7, font.size = 9, label_format =40) -> 
 
 
 ```{r fig.height=7, fig.width=8}
-clusters_list%>% compareCluster(fun='enrichDGN', pvalueCutoff=1e-3)-> enrich_output
+clusters_list%>% compareCluster(fun='enrichDGN', pvalueCutoff=1e-2)-> enrich_output
 
 
 enrich_output %>% dotplot(showCategory = 5, font.size = 9, label_format =40) -> enrichDGN

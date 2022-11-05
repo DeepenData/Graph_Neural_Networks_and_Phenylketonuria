@@ -42,7 +42,7 @@ patients_mask <- sample(c(T,F), n_patients, replace = T, prob = c(.75, 0.5))
 edge_weights_x_patients_SAMPLE <- edge_weights_x_patients[edges_mask,patients_mask]
 labels_SAMPLE <- labels[patients_mask]
 edges_genes_SAMPLE <- edges_genes[edges_mask,]
-processed_data <- edge_weights_x_patients_SAMPLE %>% as.matrix() %>% scale %>% rescale
+processed_data <- edge_weights_x_patients_SAMPLE %>% as.matrix()  %>% rescale
 dim(processed_data)
 length(labels_SAMPLE)
 ```
@@ -93,6 +93,12 @@ ht <- Heatmap(t(processed_data),
 
 
 heatmap_clusters <- waRRior::heatmap_extract_cluster(draw(ht), t(processed_data),  which = "column")
+
+```
+
+```{r}
+#setwd("/DeepenData/Repos/geometric_cobra")
+#saveRDS(heatmap_clusters, file = "heatmap_clusters_test.rds")
 
 ```
 
@@ -249,7 +255,7 @@ enrich_output %>% dotplot(showCategory = 10, font.size = 9, label_format =50)+
     text = element_text(size=6)) -> enrichKEGG
 ```
 ```{r fig.height=4, fig.width=8}
-purrr::map2(transporters, c("Entrez ID","Entrez ID","Entrez ID"), pull) %>% compareCluster(fun='enrichDGN', pvalueCutoff=1e-2,  qvalueCutoff=1e-2)-> enrich_output
+purrr::map2(transporters, c("Entrez ID","Entrez ID","Entrez ID"), pull) %>% compareCluster(fun='enrichDGN', pvalueCutoff=5e-2,  qvalueCutoff=5e-2)-> enrich_output
 enrich_output %>% dotplot(showCategory = 5, font.size = 9, label_format =40)+
    theme( 
     legend.text=element_text(size=6),
