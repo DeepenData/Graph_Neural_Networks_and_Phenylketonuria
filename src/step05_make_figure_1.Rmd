@@ -1,0 +1,144 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(magrittr)
+setwd("/DeepenData/Repos/geometric_cobra")
+
+metabolite_data        <- read_csv("./metabolites_data/metabolite_data.csv")
+subsys_fluxes_non_zero <- arrow::read_parquet("./results/flux/subsys_fluxes_non_zero.parquet.gzip")
+
+
+
+get_data_subset <- function(df , condition, aminoacids){
+                                        df %<>%  select(!dplyr::matches('suac')) %>%
+                                        dplyr::filter(Condicion==condition) %>% 
+                                        select_if(is.numeric) 
+                                        if(aminoacids){df %<>% select(!dplyr::matches('C\\d+'))
+                                        } else {df %<>% select(dplyr::matches('C\\d+'))}
+                                        return(df)}
+ 
+AAs_PKU        <- get_data_subset(metabolite_data, "PKU", T)
+AcylCs_PKU     <- get_data_subset(metabolite_data, "PKU", F)
+AAs_Control    <- get_data_subset(metabolite_data, "Control", T)
+AcylCs_Control <- get_data_subset(metabolite_data, "Control", F)
+```
+
+```{r}
+library(ComplexHeatmap)
+
+plot_densityHeatmap <- function(df, title, pallete){
+    return(
+   ggplotify::as.ggplot(densityHeatmap(df %>% scale , ylim = c(-1.5, 1.5), cluster_columns = TRUE, title = title, ylab = "", col = pallete,
+                                                     title_gp = gpar(fontsize = 6), tick_label_gp = gpar(fontsize = 6), quantile_gp = gpar(fontsize = 6),
+                                                     column_names_gp = gpar(fontsize = 6),column_names_rot = 50 )) 
+    )}
+
+
+FLUX_PKU_plot  <- subsys_fluxes_non_zero  %>% plot_densityHeatmap("", rev(RColorBrewer::brewer.pal(11, "RdYlGn")))
+
+
+```
+
+```{r fig.height=8, fig.width=5, message=FALSE, warning=FALSE}
+library(ggpubr)
+
+AAs_Control_plot  <- AAs_Control %>% plot_densityHeatmap("", rev(RColorBrewer::brewer.pal(11, "Spectral")))
+AcylCs_Control_plot <- AcylCs_Control %>% plot_densityHeatmap("", rev(RColorBrewer::brewer.pal(11, "Spectral")))
+AAs_PKU_plot <- AAs_PKU %>% plot_densityHeatmap("", rev(RColorBrewer::brewer.pal(11, "Spectral")))
+AcylCs_PKU_plot <- AcylCs_PKU %>% plot_densityHeatmap("", rev(RColorBrewer::brewer.pal(11, "Spectral")))
+
+
+densityHeatmap_panel <- ggarrange(AAs_Control_plot, AcylCs_Control_plot,
+                                  AAs_PKU_plot, AcylCs_PKU_plot, 
+                                  ncol = 1 ,  common.legend = T, heights = c(.75,1,.75,1), labels = c("a","b","c","d"))
+
+```
+
+```{r fig.height=4, fig.width=7, message=FALSE, warning=FALSE}
+library(umap)
+
+make_umap <- function(AAs_Control, AcylCs_Control,AAs_PKU, AcylCs_PKU){
+                                                          data_control <-cbind(AAs_Control,AcylCs_Control)
+                                                        data_PKU     <- cbind(AAs_PKU,AcylCs_PKU)
+                                                        data_control["Group"] <- "Control"
+                                                        data_PKU["Group"] <- "PKU"
+                                                        
+                                                        data <- rbind(data_PKU,data_control)
+                                                        
+                                                        UMAPM <- umap(data  %>% select_if(is.numeric) %>% 
+                                                                        as.matrix(), n_neighbors = 50, scale = T, n_threads = 20, fast_sgd = F, metric = 'cosine', spread = 10)
+                                                        p <- ggplot(as_tibble(UMAPM$layout), aes(V1, V2, colour= data[["Group"]]))
+                                                        UMAP_reduction <-  p + geom_point(size= .2) + xlab('UMAP dimension 1') + ylab('UMAP dimension 2')+
+                                                          scale_colour_manual(values = c("cadetblue", "blue"))+ theme(text = element_text(size = 9))   +
+                                                             guides(color = guide_legend(override.aes = list(size = 3) ) )+guides(color = guide_legend(title = "Group", override.aes = list(size = 3) )) 
+                                                        return(UMAP_reduction)
+}
+
+umap_original_data<- make_umap(AAs_Control, AcylCs_Control,AAs_PKU, AcylCs_PKU)
+```
+
+```{r}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/augmented_metabolite_data.parquet.gzip")
+augmented_metabolite_data <- rename(augmented_metabolite_data, Condicion = label) %>% dplyr::mutate(Condicion = if_else(Condicion== 1, 'PKU', 'Control'))
+
+
+AAs_PKU_2        <- get_data_subset(augmented_metabolite_data, "PKU", T)
+AcylCs_PKU_2     <- get_data_subset(augmented_metabolite_data, "PKU", F)
+AAs_Control_2    <- get_data_subset(augmented_metabolite_data, "Control", T)
+AcylCs_Control_2 <- get_data_subset(augmented_metabolite_data, "Control", F)
+
+umap_augmented_data <- make_umap(AAs_Control_2, AcylCs_Control_2,AAs_PKU_2, AcylCs_PKU_2)
+
+```
+```{r fig.height=8, fig.width=10, message=FALSE, warning=FALSE}
+
+
+umap_panel <- ggarrange(umap_original_data, umap_augmented_data, common.legend = T, labels = c("e","f"), vjust = .5, hjust = .5)
+
+setwd("/DeepenData/Repos/geometric_cobra")
+
+img <- png::readPNG("./results/figures/RECON_graph.png")
+
+graph <- ggplot() + background_image(img)
+
+
+
+UMAP_plus_graph <- ggarrange(umap_panel, graph,FLUX_PKU_plot, ncol = 1, heights = c(1, 2.5, 1), labels = c("","g","h"))
+ggarrange(densityHeatmap_panel, UMAP_plus_graph, widths = c(.95,1), ncol = 2) -> panel
+
+ggsave("/DeepenData/Repos/geometric_cobra/results/figures/Figure_1.png", 
+       panel, height=8, width=9, bg = "white")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
