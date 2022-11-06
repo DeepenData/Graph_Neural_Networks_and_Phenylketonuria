@@ -1,6 +1,5 @@
 deprecated/
 tmp/
-COBRA_models_and_graphs/  
 **/*.png
 **/*.svg
 **/*.pdf   
@@ -24,3 +23,6 @@ COBRA_models_and_graphs/
 **/*.mat
 **/*.gexf
 **/*.gephi
+**/*.parquet
+**/*.GraphML
+**/*.graphml
