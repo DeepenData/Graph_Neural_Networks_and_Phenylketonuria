@@ -4,11 +4,11 @@ output: html_notebook
 ---
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
-setwd("/DeepenData/Repos/geometric_cobra")
+setwd("/DeepenData/Repos/geometric_cobra/deprecated")
 
 subsys_fluxes_non_zero <- arrow::read_parquet("./results/data/flux_samples/subsys_fluxes_non_zero.parquet.gzip")
 
-
+subsys_fluxes_non_zero
 ```
 
 
