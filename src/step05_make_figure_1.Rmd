@@ -3,19 +3,21 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(magrittr)
 setwd("/DeepenData/Repos/geometric_cobra")
 
-metabolite_data        <- read_csv("./metabolites_data/metabolite_data.csv")
+#metabolite_data        <- read_csv("./metabolites_data/metabolite_data.csv")
 subsys_fluxes_non_zero <- arrow::read_parquet("./results/flux/subsys_fluxes_non_zero.parquet.gzip")
+metabolite_data        <- arrow::read_parquet("./metabolites_data/metabolites_outliers_imputed.parquet.gzip")
+```
 
 
-
+```{r message=FALSE, warning=FALSE}
 get_data_subset <- function(df , condition, aminoacids){
-                                        df %<>%  select(!dplyr::matches('suac')) %>%
-                                        dplyr::filter(Condicion==condition) %>% 
+                                        df %<>%  select(!dplyr::matches('SA')) %>%
+                                        dplyr::filter(Group==condition) %>% 
                                         select_if(is.numeric) 
                                         if(aminoacids){df %<>% select(!dplyr::matches('C\\d+'))
                                         } else {df %<>% select(dplyr::matches('C\\d+'))}
@@ -27,7 +29,7 @@ AAs_Control    <- get_data_subset(metabolite_data, "Control", T)
 AcylCs_Control <- get_data_subset(metabolite_data, "Control", F)
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(ComplexHeatmap)
 
 plot_densityHeatmap <- function(df, title, pallete){
@@ -79,12 +81,13 @@ make_umap <- function(AAs_Control, AcylCs_Control,AAs_PKU, AcylCs_PKU){
 }
 
 umap_original_data<- make_umap(AAs_Control, AcylCs_Control,AAs_PKU, AcylCs_PKU)
+umap_original_data
 ```
 
 ```{r}
 setwd("/DeepenData/Repos/geometric_cobra")
 
-augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/augmented_metabolite_data.parquet.gzip")
+augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/augmented_metabolite_data_v2.parquet.gzip")
 augmented_metabolite_data <- rename(augmented_metabolite_data, Condicion = label) %>% dplyr::mutate(Condicion = if_else(Condicion== 1, 'PKU', 'Control'))
 
 
@@ -94,7 +97,7 @@ AAs_Control_2    <- get_data_subset(augmented_metabolite_data, "Control", T)
 AcylCs_Control_2 <- get_data_subset(augmented_metabolite_data, "Control", F)
 
 umap_augmented_data <- make_umap(AAs_Control_2, AcylCs_Control_2,AAs_PKU_2, AcylCs_PKU_2)
-
+umap_augmented_data
 ```
 ```{r fig.height=8, fig.width=10, message=FALSE, warning=FALSE}
 
@@ -115,6 +118,22 @@ ggarrange(densityHeatmap_panel, UMAP_plus_graph, widths = c(.95,1), ncol = 2) ->
 ggsave("/DeepenData/Repos/geometric_cobra/results/figures/Figure_1.png", 
        panel, height=8, width=9, bg = "white")
 ```
+
+
+```{r message=FALSE, warning=FALSE}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/augmented_metabolite_data_v2.parquet.gzip") 
+
+
+
+augmented_metabolite_data
+
+
+
+
+```
+
 
 
 

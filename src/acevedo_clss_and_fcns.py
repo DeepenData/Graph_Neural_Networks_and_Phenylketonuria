@@ -236,7 +236,7 @@ def add_flux_features(nx_G_in,flux_samples, feature_data):
     nx_G = copy.deepcopy(nx_G_in)
 
     feature_length = len(nx_G.nodes(data=True)['r0399']['x']) 
-    flux_dict = flux_samples.sample(feature_length, replace=False).to_dict(orient = 'list')
+    flux_dict = flux_samples.sample(feature_length, replace=True).to_dict(orient = 'list')
 
     x_attribute     = nx.get_node_attributes(nx_G, "x")
     x_attribute.update(flux_dict)
@@ -378,48 +378,9 @@ def Adcanced_train_one_epoch(modelo: GIN_classifier,
     torch.optim.swa_utils.update_bn(train_loader, swa_model, device=device)
     return last_loss
 
-def validate(modelo: GIN_classifier, loader: DataLoader, device: str = 'cpu'):
-    modelo.eval()
-    correct = 0
-    for i, val_data in enumerate(loader):
-        
-        assert not val_data.is_cuda
-        if (device == 'cuda:0') | (device == 'cuda'):
-            val_data.to(device, non_blocking=True) 
-            assert val_data.is_cuda                          
 
-        val_predictions = modelo(val_data)# Make predictions for this batch
-        pred            = val_predictions.argmax(dim=1)
 
-        correct += int((pred == val_data.y).sum())
-        
 
-    return correct / len(loader.dataset)   
-
-def train_one_epoch(modelo: GIN_classifier,
-                    optimizer, 
-                    train_loader: torch_geometric.loader.dataloader.DataLoader,
-                    loss_fun: torch.nn.modules.loss,
-                    device:str='cpu' ):
-
-    correct = 0
-    for i, data in enumerate(train_loader):
-        assert not data.is_cuda   
-        if (device == 'cuda:0') | (device == 'cuda'):                            
-            data.to(device, non_blocking=True) 
-            assert data.is_cuda       
-                
-        optimizer.zero_grad(set_to_none=True) # Zero your gradients for every batch        
-        if (device == 'cuda:0') | (device == 'cuda'):
-            #with torch.cuda.amp.autocast():      
-            predictions = modelo(data)# Make predictions for this batch
-            loss        = loss_fun(predictions, data.y)
-            loss.backward()  # Derive gradients.
-            optimizer.step()  # Update parameters based on gradients.        
-            pred     = predictions.argmax(dim=1)  # Use the class with highest probability.
-            correct += int((pred == data.y).sum())  # Check against ground-truth labels.
-
-    return correct / len(train_loader.dataset)
 
 def train_and_validate(modelo,loss_fun,optimizer, EPOCHS ,train_loader,validation_loader, 
                        validation_cycle:int = 4,
@@ -519,7 +480,6 @@ class GCN(torch.nn.Module):
         x = self.lin(x)
         
         return F.log_softmax(x, dim=1) #x
-
 class batch_loader():
     
     def __init__(self, graphs: list, batch_size: int  =1*32, num_samples:int = None, validation_percent:float = .3):
@@ -527,7 +487,10 @@ class batch_loader():
         self.batch_size = batch_size
         self.num_samples = num_samples
         self.validation_percent = validation_percent
-        self.train_idxs, self.val_idxs = train_test_split(range(len(self.graphs)), test_size = self.validation_percent)     
+        
+        self.train_idxs, self.sub_idxs = train_test_split(range(len(self.graphs)), test_size = self.validation_percent)
+        self.val_idxs,   self.test_idxs = train_test_split(self.sub_idxs, test_size = self.validation_percent)     
+
         
     def get_train_loader(self):
         train_subset = [self.graphs[i] for i in self.train_idxs]
@@ -540,6 +503,15 @@ class batch_loader():
     
     def get_validation_loader(self):
         validation_subset = [self.graphs[i] for i in self.val_idxs]
+        sampler      = RandomSampler(
+        validation_subset,
+        #num_samples= self.num_samples, 
+        replacement=False)   
+        
+        return  DataLoader(validation_subset, batch_size= self.batch_size, sampler = sampler,  drop_last=True)
+    
+    def get_test_loader(self):
+        validation_subset = [self.graphs[i] for i in self.test_idxs]
         sampler      = RandomSampler(
         validation_subset,
         #num_samples= self.num_samples, 

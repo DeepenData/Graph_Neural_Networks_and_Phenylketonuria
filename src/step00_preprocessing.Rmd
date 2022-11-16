@@ -229,6 +229,10 @@ my_panel
 ```{r}
 
 
+data %>% 
+  data.table::setnames(old = c("tir","Glt"),new = c('Tyr','Glu'))
+
+
 setwd("/DeepenData/Repos/geometric_cobra")
 
 arrow::write_parquet(data, "./metabolites_data/metabolites_outliers_imputed.parquet.gzip" ,  compression = "gzip")
