@@ -1,0 +1,248 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(magrittr)
+library(ggbeeswarm)
+library(ggpubr)
+library(mixgb)
+library(readxl)
+
+setwd("/DeepenData/Repos/geometric_cobra")
+
+df1 <-read_csv2("./metabolites_data/Base_de_datos_2010_2020_columnas_limpias.csv")
+vars_to_drop_NAs <- c("Fecha entrega informe","Fecha de nacimiento","Phe","tir", "Edad (días calculados)")
+
+
+
+df1 %>% drop_na(any_of(vars_to_drop_NAs))  %>%
+        filter( (0 < tir)) %>%
+        filter( (0 < Phe) & (Phe < 120))  %>%   
+        filter(`Edad (días calculados)` <= 31) %>% 
+        select(-c("FDIAG")) %>%
+        mutate(`Fecha entrega informe` = as.Date(`Fecha entrega informe`,"%d-%m-%Y"))  %>% 
+        mutate(`Fecha de nacimiento` = as.Date(`Fecha de nacimiento`,"%d-%m-%Y")) %>%
+        filter(`Fecha entrega informe` > '2009-01-01')-> healthy
+
+#healthy$Condicion <- "Control"
+
+
+to_drop <- c( "RUT","Fecha entrega informe", "Fecha de nacimiento",    "estudio molecular",      "Ciudad",                 "Sexo" , 
+ "Edad (días calculados)", "FADIAG (mg por dL)",     "TIRDIAG mg_por_DL" ,     "razon_FADIAG_TIRDIAG" ,  "COMUNA",
+ "REGION"         ,        "TDIAG")
+
+
+
+healthy_numeric <- healthy %>% select(-c(to_drop)) %>% select_if(is_double)
+
+############################################################################################################################################
+df1_pku <- read_excel('./metabolites_data/Datos_Primera_Medición_PKU.xlsx')
+
+
+vars_to_drop_NAs <- c("Fecha.entrega.informe","edad_diagnostico_dias","Phe")
+
+
+df1_pku %>% drop_na(any_of(vars_to_drop_NAs)) %>% filter(edad_diagnostico_dias<=31)%>%
+        mutate(`Fecha.entrega.informe` = as.Date(`Fecha.entrega.informe`,"%d-%m-%Y")) %>%
+   mutate(`Fecha.Nacimiento` = as.Date(`Fecha.Nacimiento`,"%d-%m-%Y"))  %>%
+  filter(`Fecha.entrega.informe` > '2009-01-01')-> PKU
+  
+
+
+to_drop <- c("Paciente_PKU", "COMUNA", "REGION", "Condicion", "RUT", "Fecha.entrega.informe", "Fecha.Nacimiento", "estudio.molecular",
+             "Ciudad", "Sexo", "edad_diagnostico_dias", "FADIAG..mg.por.dL.",    "TIRDIAG.mg_por_dL","razon_FADIAG_TIRDIAG" ,"TDIAG")
+
+
+PKU_numeric <- PKU %>% select(-c(to_drop)) %>% select_if(is_double)
+
+
+
+
+```
+
+
+```{r message=FALSE, warning=FALSE}
+
+check_in            <- function(a_row){return("out" %in% a_row) }
+find_out_occurences <- function(df){return(sapply(as.list(as.data.frame(t(df))), check_in) %>% as.vector())}
+outliers_to_str     <- function(a_col, first_qutl, second_qutl){
+                                  Q1 <- quantile(a_col, first_qutl, names = FALSE, na.rm =T)
+                                  Q3 <- quantile(a_col, second_qutl, names = FALSE, na.rm =T)
+                                  INTER <- Q3 - Q1
+                                  lower_bound <- Q1 - 1.5*INTER
+                                  upper_bound <- Q3 + 1.5*INTER
+                                  a_col[a_col < lower_bound | a_col > upper_bound] <- "out"
+                                  return(a_col)}
+
+
+remove_outliers_patients <- function(df, first_qutl, second_qutl){
+                                        df  %>%  dplyr::select(-c(Phe)) %>% mutate_all(outliers_to_str, first_qutl, second_qutl)  %>% 
+                                        find_out_occurences  -> out_ocurrences
+                                        return(df[!out_ocurrences,])}
+
+impute_data_with_mixgb <- function(df){
+                                      for_mixgb <- data_clean(df) 
+                                      names(for_mixgb) <- make.names(colnames(for_mixgb))
+                                      imputed.data <- mixgb(data = for_mixgb, m = 1, nthread = 20)
+                                      imputed_data <-imputed.data[[1]] %>% as.data.frame()
+                                      return(imputed_data)}
+
+plot_swarm       <- function(df, size, alpha){
+                              df%>% pivot_longer(everything()) -> long
+                              ggplot(long,aes(name, value)) + geom_quasirandom(size=size, alpha = alpha) -> my_plot
+                              return(my_plot)}
+
+
+plot_swarm_panel <- function(dropped_patients_done, size, alpha){
+
+                              dropped_patients_done %>% 
+                                summarise(across(where(is.double),  ~ mean(.x, na.rm = TRUE))) %>% t -> vars_mean
+                              
+                              
+                              
+                              q_25 <- quantile(vars_mean, 0.25, na.rm = TRUE)[[1]]
+                              q_50 <- quantile(vars_mean, 0.5, na.rm = TRUE)[[1]]
+                              q_75 <- quantile(vars_mean, 0.75, na.rm = TRUE)[[1]]
+                              
+                              vars_q_1 <- vars_mean[vars_mean < q_25,] %>% names 
+                              vars_q_2 <- vars_mean[q_25 <= vars_mean & vars_mean < q_50,] %>% names 
+                              vars_q_3 <- vars_mean[q_50 <= vars_mean &   vars_mean < q_75,] %>% names 
+                              vars_q_4 <- vars_mean[q_75 <= vars_mean ,] %>% names 
+                              
+                              dropped_patients_done[vars_q_1] %>% plot_swarm(size, alpha) -> vars_q_1_PLOT
+                              dropped_patients_done[vars_q_2] %>% plot_swarm(size, alpha)  -> vars_q_2_PLOT
+                                dropped_patients_done[vars_q_3] %>% plot_swarm(size, alpha)  -> vars_q_3_PLOT
+                                dropped_patients_done[vars_q_4] %>% plot_swarm(size, alpha)  -> vars_q_4_PLOT
+                              ggarrange(vars_q_1_PLOT, vars_q_2_PLOT, vars_q_3_PLOT, vars_q_4_PLOT,
+                                        ncol = 1) -> my_panel
+                              
+                              return(my_panel)}
+
+```
+
+```{r fig.height=7, fig.width=5}
+remove_outliers_patients(healthy_numeric, 0.25, .75)         -> healthy_outliers_removed
+impute_data_with_mixgb(healthy_outliers_removed)  -> healthy_outliers_inputation_done
+#healthy_outliers_inputation_done %>% plot_swarm_panel(.01, .1)
+```
+
+
+```{r fig.height=9, fig.width=5}
+remove_outliers_patients(PKU_numeric, 0.15, .85)         -> PKU_outliers_removed
+impute_data_with_mixgb(PKU_outliers_removed)  -> PKU_outliers_inputation_done
+#PKU_outliers_inputation_done %>% plot_swarm_panel(.5, .7)
+```
+```{r}
+healthy_outliers_inputation_done['Group'] = "Control"
+PKU_outliers_inputation_done['Group']      = "PKU"
+assertthat::assert_that(all(names(PKU_outliers_inputation_done) == names(healthy_outliers_inputation_done)))
+
+data <- rbind(PKU_outliers_inputation_done, healthy_outliers_inputation_done)
+```
+
+```{r}
+library(introdataviz)
+library(tidyverse)
+library(magrittr)
+library(ggbeeswarm)
+
+rain_height <- .1
+colours <- c("dodgerblue2", "darkorange")
+
+get_vars_by_quntl <- function(df){
+                                df %>% 
+                                summarise(across(where(is.double),  ~ mean(.x, na.rm = TRUE))) %>% t -> vars_mean
+                              q_25 <- quantile(vars_mean, 0.25, na.rm = TRUE)[[1]]
+                              q_50 <- quantile(vars_mean, 0.5, na.rm = TRUE)[[1]]
+                              q_75 <- quantile(vars_mean, 0.75, na.rm = TRUE)[[1]]
+                              
+                              vars_q_1 <- vars_mean[vars_mean < q_25,] %>% names 
+                              vars_q_2 <- vars_mean[q_25 <= vars_mean & vars_mean < q_50,] %>% names 
+                              vars_q_3 <- vars_mean[q_50 <= vars_mean &   vars_mean < q_75,] %>% names 
+                              vars_q_4 <- vars_mean[q_75 <= vars_mean ,] %>% names 
+                              return(list(vars_q_1, vars_q_2, vars_q_3, vars_q_4))
+                              }
+
+foo <- function(plot){
+                      p <- ggplot_build(plot)
+ p$data[[1]] <-   p$data[[1]] %>%
+   mutate(diff = abs(x-round(x)), x = case_when(group %% 2 == 0 ~ round(x) + diff,
+                        TRUE ~ round(x) - diff)) %>%    select(-diff)
+ 
+ 
+ return(
+   (ggplot_gtable(p))
+ )
+ 
+}
+
+ 
+
+colours <- c(alpha(c( "dodgerblue2"), .1), alpha(c("darkorange"), 1))
+
+plot_split_violins <- function(data, quntl_num, legend.position){
+  data %>% get_vars_by_quntl -> vars_by_quntl
+  
+  
+  
+  p <- data %>%  select(c(vars_by_quntl[[quntl_num]], "Group")) %>%  pivot_longer(-Group)  %>% 
+  ggplot(aes(name,value,color= Group))+ 
+  geom_quasirandom(size= c(0.2)) + #scale_fill_manual(values = colours, name = "") +
+  theme_minimal()+
+  guides(color = guide_legend(override.aes = list(size = 4, alpha = 1) ))+ 
+  theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+          axis.title.y = element_blank(), legend.position=legend.position)+scale_color_discrete(name="")+
+    scale_colour_manual(values = colours, name = "") 
+  
+  
+  
+  return(foo(p) %>% as_ggplot)  }
+
+
+```
+
+
+
+
+```{r fig.height=4, fig.width=8}
+
+library(ggpubr)
+
+
+
+d_subplot <-plot_split_violins(data, 1 , 'none')
+c_subplot <-plot_split_violins(data, 2 , 'none')
+b_subplot <-plot_split_violins(data, 3 , 'none')
+a_subplot <-plot_split_violins(data, 4 , 'top')
+
+
+
+left_swarms <- ggarrange(b_subplot, c_subplot, d_subplot, ncol = 1, labels = c("b", "c", "d"), hjust = 1)
+
+ggarrange(a_subplot, left_swarms,  ncol = 2, widths = c(.8, 1), labels = c("a")) -> my_panel
+my_panel
+```
+```{r}
+
+
+setwd("/DeepenData/Repos/geometric_cobra")
+
+arrow::write_parquet(data, "./metabolites_data/metabolites_outliers_imputed.parquet.gzip" ,  compression = "gzip")
+
+
+```
+
+```{r fig.height=4, fig.width=8}
+
+
+setwd("/DeepenData/Repos/geometric_cobra")
+
+ggsave('my_panel.png', my_panel, height = 4, width = 8, bg = "white")
+```
+#####################################
+#######################################
+######################################
