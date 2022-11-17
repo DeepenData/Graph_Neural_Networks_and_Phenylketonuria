@@ -165,42 +165,41 @@ get_vars_by_quntl <- function(df){
                               vars_q_3 <- vars_mean[q_50 <= vars_mean &   vars_mean < q_75,] %>% names 
                               vars_q_4 <- vars_mean[q_75 <= vars_mean ,] %>% names 
                               return(list(vars_q_1, vars_q_2, vars_q_3, vars_q_4))
-                              }
-
-foo <- function(plot){
-                      p <- ggplot_build(plot)
- p$data[[1]] <-   p$data[[1]] %>%
-   mutate(diff = abs(x-round(x)), x = case_when(group %% 2 == 0 ~ round(x) + diff,
-                        TRUE ~ round(x) - diff)) %>%    select(-diff)
- 
- 
- return(
-   (ggplot_gtable(p))
- )
- 
 }
 
- 
 
-colours <- c(alpha(c( "dodgerblue2"), .1), alpha(c("darkorange"), 1))
 
+
+foo <- function(plot){
+                                                  p <- ggplot_build(plot)
+                             p$data[[1]] <-   p$data[[1]] %>%
+                               mutate(diff = abs(x-round(x)), x = case_when(group %% 2 == 0 ~ round(x) + diff,
+                                                    TRUE ~ round(x) - diff)) %>%    select(-diff)
+                             
+                             
+                             return(
+                               (ggplot_gtable(p))
+                             )
+                             
+                            }
 plot_split_violins <- function(data, quntl_num, legend.position){
-  data %>% get_vars_by_quntl -> vars_by_quntl
-  
-  
-  
-  p <- data %>%  select(c(vars_by_quntl[[quntl_num]], "Group")) %>%  pivot_longer(-Group)  %>% 
-  ggplot(aes(name,value,color= Group))+ 
-  geom_quasirandom(size= c(0.2)) + #scale_fill_manual(values = colours, name = "") +
-  theme_minimal()+
-  guides(color = guide_legend(override.aes = list(size = 4, alpha = 1) ))+ 
-  theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-          axis.title.y = element_blank(), legend.position=legend.position)+scale_color_discrete(name="")+
-    scale_colour_manual(values = colours, name = "") 
-  
-  
-  
-  return(foo(p) %>% as_ggplot)  }
+                          colours <- c(alpha(c( "dodgerblue2"), .1), alpha(c("darkorange"), 1))
+                          data %>% get_vars_by_quntl -> vars_by_quntl
+                          
+                          
+                          
+                          p <- data %>%  select(c(vars_by_quntl[[quntl_num]], "Group")) %>%  pivot_longer(-Group)  %>% 
+                          ggplot(aes(name,value,color= Group))+ 
+                          geom_quasirandom(size= c(0.2)) + #scale_fill_manual(values = colours, name = "") +
+                          theme_minimal()+
+                          guides(color = guide_legend(override.aes = list(size = 4, alpha = 1) ))+ 
+                          theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+                                  axis.title.y = element_blank(), legend.position=legend.position)+scale_color_discrete(name="")+
+                            scale_colour_manual(values = colours, name = "") 
+                          
+                          
+                          
+                          return(foo(p) %>% as_ggplot)  }
 
 
 ```
