@@ -54,7 +54,8 @@ plot_split_violins <- function(data, quntl_num,vars_by_quntl ,legend.position, l
                           theme_minimal()+
                           guides(color = guide_legend(override.aes = list(size = 4, alpha = 1) ))+ 
                           theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-                                  axis.title.y = element_blank(), legend.position=legend.position)+scale_color_discrete(name="")+
+                                  axis.title.y = element_blank(), legend.position=legend.position,
+                                 legend.text = element_text(size=7))+scale_color_discrete(name="")+
                             scale_colour_manual(values = colours, name = "") 
                           
                           if(logscale){p <-p  + coord_trans( y="log2") }
@@ -80,7 +81,7 @@ right_swarms <- ggarrange(b_subplot, c_subplot, d_subplot, e_subplot, ncol = 1, 
 
 
 
-ggarrange(a_subplot, right_swarms, widths = c(.5, 1), labels = c("a",""), vjust = 1.1) -> swarm_panel
+ggarrange(a_subplot, right_swarms, widths = c(.55, 1), labels = c("a",""), vjust = 1.1) -> swarm_panel
 
 
 ```
@@ -88,11 +89,13 @@ ggarrange(a_subplot, right_swarms, widths = c(.5, 1), labels = c("a",""), vjust 
 ```{r}
 make_umap <- function(data, legend.position){UMAPM <- umap::umap(data  %>% select_if(is.numeric) %>% 
                                                                         as.matrix(), n_neighbors = 20, scale = T, n_threads = 20, fast_sgd = F, metric = 'cosine', spread = 10)
-                                                        
+                       
+                                                       
 
 p <- ggplot(as_tibble(UMAPM$layout), aes(V1, V2, colour= data[["Group"]]))
                                                         UMAP_reduction <-  p + geom_point(size= .2) + xlab('UMAP dimension 1') + ylab('UMAP dimension 2')+
-                                                          scale_colour_manual(values = c("cadetblue", "blue"))+ theme(legend.position=legend.position, text = element_text(size = 9))   +
+                                                          scale_colour_manual(values =  c(alpha(c( "dodgerblue2"), .5), alpha(c("darkorange"), 1)))+ 
+                                                          theme(legend.position=legend.position, text = element_text(size = 9), axis.title.y = element_text(size = 7),  axis.title.x = element_text(size = 7))   +
                                                              guides(color = guide_legend(override.aes = list(size = 3) ) )+guides(color = guide_legend(title = "Group", override.aes = list(size = 3) )) 
                                                         return(UMAP_reduction)}
 
@@ -107,7 +110,7 @@ augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/augmented
 
 
 augmented_metabolite_data %>% 
-  rename( Group = label) %>% mutate(Group = if_else(Group == 1,'PKU','Control')) %>% make_umap('right')-> umap_plot_2
+  rename( Group = label) %>% mutate(Group = if_else(Group == 1,'PKU','Control')) %>% make_umap('none')-> umap_plot_2
 
 
 ```
@@ -115,7 +118,7 @@ augmented_metabolite_data %>%
 
 ```{r}
 
-umap_panel <-  ggarrange(umap_plot_1, umap_plot_2, widths = c(.8,1))
+
 
 setwd("/DeepenData/Repos/geometric_cobra")
 
@@ -129,7 +132,7 @@ graph <- ggplot() + background_image(img)
 ```{r}
 plot_swarm       <- function(df, size, alpha){
                               df%>% pivot_longer(everything()) -> long
-                              ggplot(long,aes(name, value)) + geom_quasirandom(size=size, alpha = alpha) -> my_plot
+                              ggplot(long,aes(name, value)) + geom_quasirandom(size=size, alpha = alpha, aes(color='red4')) -> my_plot
                               return(my_plot)}
 
 
@@ -140,11 +143,29 @@ plot_swarm       <- function(df, size, alpha){
 
 p <- subsys_fluxes_non_zero[,colSums(subsys_fluxes_non_zero)%>%abs > 1] %>% sample_n(1000) %>% abs %>% plot_swarm(.2,.2) 
 
-p + ylim(c(0,5.9)) + 
-  xlab('Reaction')+ ylab('Flux') + theme_minimal() +  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+flux_subplot <- p + ylim(c(0,5.9)) + 
+  xlab('Reaction')+ ylab('Flux') + theme_minimal() +  theme(legend.position = 'none', axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 ```
 
+
+```{r fig.height=6, fig.width=7.5}
+umap_panel <-  ggarrange(umap_plot_1, umap_plot_2, widths = c(1,1))
+
+ggarrange(umap_panel, graph, flux_subplot, ncol = 1, heights = c(.4,1,.55), labels = c("f","g","h"),  vjust = 1.1, hjust = .5) -> right_panel
+
+ggarrange(swarm_panel, right_panel, ncol = 2, widths = c(1,.7)) -> figure_1_panel
+
+```
+
+
+```{r fig.height=6, fig.width=7.5}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+ggsave("./results/figures/Figure_1.png", 
+       figure_1_panel, height=6.5, width=8, bg = "white")
+
+```
 
 
 #####################################################################################################################################################
