@@ -50,26 +50,26 @@ right_annotation <- rowAnnotation( gp = gpar(fontsize = 2), Group = labels_SAMPL
 top_annotation <- columnAnnotation(`TS` = anno_lines( pch = 26, size = unit(5, "mm"), gp = gpar(col = 'red4'),
                                                         edge_scores, height = unit(1.5, "cm")))
 
-bottom_annotation <- HeatmapAnnotation(foo = anno_block(labels = c("C1", "C2", "C3", "C4"),labels_gp = gpar(col = "darkslategray", fontsize = 9),
+bottom_annotation <- HeatmapAnnotation(foo = anno_block(labels = c("C1", "C2", "C3"),labels_gp = gpar(col = "darkslategray", fontsize = 9),
                                                         gp = gpar(fill = c("azure2","azure2","azure2","azure2"))))
 #densityHeatmap(t(processed_data),  ylim = c(0.02, 0.5),  ylab = "some values", show_quantiles = F, mc.cores =20, cores = 20,
 #               cluster_columns = TRUE,  clustering_distance_columns  =  function(x) fastcluster::hclust(dist(x), "euclidean"))  %v%
 ht <- Heatmap(t(processed_data),
-              clustering_distance_columns  =  function(x) fastcluster::hclust(dist(x), "euclidean"),
-              cluster_columns              =  function(x) fastcluster::hclust(dist(x), "complete"),
-              clustering_distance_rows  =  function(x) fastcluster::hclust(dist(x), "euclidean"),
-              cluster_rows              =  function(x) fastcluster::hclust(dist(x), "complete"),
+              clustering_distance_columns  =  function(x) fastcluster::hclust(dist(x), "cosine"),
+              cluster_columns              =  function(x) fastcluster::hclust(dist(x), "centroid"),
+              clustering_distance_rows  =  function(x) fastcluster::hclust(dist(x), "cosine"),
+              cluster_rows              =  function(x) fastcluster::hclust(dist(x), "centroid"),
               name = "Edge weight",
               border = TRUE,
               row_km = 2, 
-              column_km = 4,  
+              column_km = 3,  
               row_gap = unit(2, "mm"),
               column_gap = unit(2, "mm"),
               width = unit(14.5, "cm"),
                height = unit(4.5, "cm"),
               show_column_names = F, 
               show_row_names = F,
-              column_title = c( "Graph edges"),
+              column_title = c( "Explanatory subgraph edges"),
               column_title_gp = gpar(fontsize = 11),
               row_title = c("Samples (patients)"),
               row_title_gp = gpar(fontsize = 11),
@@ -126,17 +126,17 @@ get_functional_annots <- function(entrez_IDs, transporters){
 
  #%>% as_tibble() %>% nest(name_1006= name_1006) %>% mutate(name_1006 = name_1006) -> nested_df
 
-transporters <- purrr::map2(clusters_list, c(T,T,T,T), get_functional_annots)
-reactions    <- purrr::map2(clusters_list, c(F,F,F,F), get_functional_annots)
+transporters <- purrr::map2(clusters_list, c(T,T,T), get_functional_annots)
+reactions    <- purrr::map2(clusters_list, c(F,F,F), get_functional_annots)
 ```
 
 
 
 
 ```{r fig.height=4, fig.width=8}
-purrr::map2(reactions, c("Entrez ID","Entrez ID","Entrez ID","Entrez ID"), pull) %>% 
-  compareCluster(fun='enrichKEGG', pvalueCutoff=1e-2, qvalueCutoff=1e-2)-> enrich_output
-enrich_output %>% dotplot(showCategory = 10, font.size = 8, label_format =50)+
+purrr::map2(reactions, c("Entrez ID","Entrez ID","Entrez ID"), pull) %>% 
+  compareCluster(fun='enrichPathway', pvalueCutoff=1e-2, qvalueCutoff=1e-2)-> enrich_output
+enrich_output %>% dotplot(showCategory = 10, font.size = 5, label_format =90)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -148,8 +148,8 @@ enrich_output %>% dotplot(showCategory = 10, font.size = 8, label_format =50)+
 
 
 ```{r fig.height=4, fig.width=8}
-purrr::map2(reactions, c("Entrez ID","Entrez ID","Entrez ID","Entrez ID"), pull) %>% compareCluster(fun='enrichDGN', pvalueCutoff=1e-2,  qvalueCutoff=1e-2)-> enrich_output
-enrich_output %>% dotplot(showCategory = 5, font.size = 8, label_format =80)+
+purrr::map2(reactions, c("Entrez ID","Entrez ID","Entrez ID"), pull) %>% compareCluster(fun='enrichDGN', pvalueCutoff=5e-2,  qvalueCutoff=5e-2)-> enrich_output
+enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -160,9 +160,9 @@ enrich_output %>% dotplot(showCategory = 5, font.size = 8, label_format =80)+
 ```{r}
 
 
-purrr::map2(transporters, c("Entrez ID","Entrez ID","Entrez ID","Entrez ID"), pull) %>% 
-  compareCluster(fun='enrichKEGG', pvalueCutoff=5e-2, qvalueCutoff=5e-2)-> enrich_output
-enrich_output %>% dotplot(showCategory = 10, font.size = 8, label_format =50)+
+purrr::map2(transporters, c("Entrez ID","Entrez ID","Entrez ID"), pull) %>% 
+  compareCluster(fun='enrichPathway', pvalueCutoff=1e-2, qvalueCutoff=1e-2)-> enrich_output
+enrich_output %>% dotplot(showCategory = 10, font.size = 5, label_format =50)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -170,8 +170,8 @@ enrich_output %>% dotplot(showCategory = 10, font.size = 8, label_format =50)+
     text = element_text(size=6)) -> enrichKEGG_transporters
 ```
 ```{r fig.height=4, fig.width=8}
-purrr::map2(transporters, c("Entrez ID","Entrez ID","Entrez ID","Entrez ID"), pull) %>% compareCluster(fun='enrichDGN', pvalueCutoff=5e-2,  qvalueCutoff=5e-2)-> enrich_output
-enrich_output %>% dotplot(showCategory = 5, font.size = 8, label_format =40)+
+purrr::map2(transporters, c("Entrez ID","Entrez ID","Entrez ID"), pull) %>% compareCluster(fun='enrichDGN', pvalueCutoff=5e-2,  qvalueCutoff=5e-2)-> enrich_output
+enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =40)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -186,8 +186,14 @@ heatmap_ggploted <- ggplotify::as.ggplot((ht))
 upper_enrich <- ggarrange(enrichKEGG_reactions, enrichDGN_reactions, nrow = 1, common.legend = T, labels = c("b","c")) %>% annotate_figure(left = text_grob("Reaction-related edges", color = "black", rot = 90, face = "bold"))
 
 lower_enrich <- ggarrange(enrichKEGG_transporters, enrichDGN_transporters, nrow = 1, common.legend = T, labels = c("d","e")) %>% annotate_figure(left = text_grob("Transport-related edges", color = "black", rot = 90, face = "bold"))
-enrich_panel <- ggarrange(upper_enrich, lower_enrich, common.legend = T, nrow = 2, heights = c(1.2,1))
-ggarrange(heatmap_ggploted, enrich_panel, nrow = 2, heights = c(1, 1.28), labels = c("a", "")) -> panel
+enrich_panel <- ggarrange(upper_enrich, lower_enrich, common.legend = T, nrow = 2, heights = c(1.5,1))
+enrich_panel
+```
+
+
+```{r fig.height=8, fig.width=6.7, message=FALSE, warning=FALSE}
+ggarrange(heatmap_ggploted, enrich_panel, nrow = 2, heights = c(1, 1.4), labels = c("a", "")) -> panel
+panel
 ```
 
 ```{r}
@@ -195,7 +201,7 @@ setwd("/DeepenData/Repos/geometric_cobra")
 
 
 
-ggsave("./results/figures/Figure_3.png", panel, device = 'png', dpi = 200, bg = "white", width = 8, height =8.6 )
+ggsave("./results/figures/Figure_3.png", panel, device = 'png', dpi = 200, bg = "white", width = 8, height =9 )
 ```
 
 
@@ -203,6 +209,93 @@ ggsave("./results/figures/Figure_3.png", panel, device = 'png', dpi = 200, bg = 
 
 
 
+```{r}
+
+
+
+base_size =6
+
+table_1  <- ggtexttable(reactions[[1]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "#8cc257", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill = c("#e8f3de", "#d3e8bb"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 1. Reaction-associated genes (Cluster 1).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Non-masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+
+table_2  <- ggtexttable(reactions[[2]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "#8cc257", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill = c("#e8f3de", "#d3e8bb"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 2. Reaction-associated genes (Cluster 2).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Non-masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+table_3  <- ggtexttable(reactions[[3]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "#8cc257", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill = c("#e8f3de", "#d3e8bb"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 3. Reaction-associated genes (Cluster 3).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Non-masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+
+table_4  <- ggtexttable(transporters[[1]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "#8cc257", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill = c("#e8f3de", "#d3e8bb"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 4. Transport-associated genes (Cluster 1).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Non-masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+
+
+table_5  <- ggtexttable(transporters[[2]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "#8cc257", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill = c("#e8f3de", "#d3e8bb"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 5. Transport-associated genes (Cluster 2).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Non-masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+
+table_6  <- ggtexttable(transporters[[3]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "#8cc257", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill = c("#e8f3de", "#d3e8bb"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 5. Transport-associated genes (Cluster 3).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Non-masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_1_NonMasked.png", table_1, dpi = 300, width = 3, height = 3.2,bg = "white")
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_2_NonMasked.png", table_2, dpi = 200, width = 3, height = .8,bg = "white")
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_3_NonMasked.png", table_3, dpi = 300, width = 3, height = 1.6,bg = "white")
+
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_4_NonMasked.png", table_4, dpi = 200, width = 3, height = 2.6,bg = "white")
+
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_5_NonMasked.png", table_5, dpi = 200, width = 3, height = 2.5,bg = "white")
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_6_NonMasked.png", table_6, dpi = 200, width = 3, height = 1.5,bg = "white")
+
+```
 
 
 

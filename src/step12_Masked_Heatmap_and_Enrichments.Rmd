@@ -23,7 +23,7 @@ library(fastcluster)
 setwd("/DeepenData/Repos/geometric_cobra")
 
 df     <-  read_csv("./results/dataframes/Masked_results_for_Heatmaps.csv") %>% dplyr::select(-c("...1"))
-labels <- read_csv("./results/dataframes/Masked_train_labels.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]]
+labels <- read_csv("./results/dataframes/Masked_test_labels.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]]
 edge_weights_x_patients <- df%>%  dplyr::select_if(is.numeric)
 edges_genes   <- df%>%  dplyr::select_if(is.character)
 n_edges <- nrow(edges_genes)
@@ -135,7 +135,7 @@ reactions    <- purrr::map2(clusters_list, c(F,F,F,F), get_functional_annots)
 
 ```{r fig.height=4, fig.width=8}
 purrr::map2(reactions, c("Entrez ID","Entrez ID","Entrez ID","Entrez ID"), pull) %>% 
-  compareCluster(fun='enrichKEGG', pvalueCutoff=1e-3, qvalueCutoff=1e-3)-> enrich_output
+  compareCluster(fun='enrichKEGG', pvalueCutoff=5e-2, qvalueCutoff=5e-2)-> enrich_output
 enrich_output %>% dotplot(showCategory = 10, font.size = 7, label_format =80)+
    theme( 
     legend.text=element_text(size=6),
@@ -148,7 +148,7 @@ enrich_output %>% dotplot(showCategory = 10, font.size = 7, label_format =80)+
 
 
 ```{r fig.height=4, fig.width=8}
-purrr::map2(reactions, c("Entrez ID","Entrez ID","Entrez ID","Entrez ID"), pull) %>% compareCluster(fun='enrichDGN', pvalueCutoff=1e-3,  qvalueCutoff=1e-3)-> enrich_output
+purrr::map2(reactions, c("Entrez ID","Entrez ID","Entrez ID","Entrez ID"), pull) %>% compareCluster(fun='enrichDGN', pvalueCutoff=1e-5,  qvalueCutoff=1e-5)-> enrich_output
 enrich_output %>% dotplot(showCategory = 5, font.size = 7, label_format =80)+
    theme( 
     legend.text=element_text(size=6),
@@ -201,6 +201,90 @@ ggsave("./results/figures/Figure_4.png", panel, device = 'png', dpi = 200, bg = 
 ```
 #####---------------Supplementary tables--------------########################
 
+```{r}
+base_size =6
+
+table_1  <- ggtexttable(reactions[[1]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "cadetblue4", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill =  c("powderblue", "lightblue1"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 1. Reaction-associated genes (Cluster 1).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+
+table_2  <- ggtexttable(reactions[[2]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill ="cadetblue4", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill =  c("powderblue", "lightblue1"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 2. Reaction-associated genes (Cluster 2).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+table_3  <- ggtexttable(reactions[[3]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "cadetblue4", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill =  c("powderblue", "lightblue1"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 3. Reaction-associated genes (Cluster 3).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+
+table_4  <- ggtexttable(transporters[[1]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "cadetblue4", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill =  c("powderblue", "lightblue1"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 4. Transport-associated genes (Cluster 1).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+
+
+table_5  <- ggtexttable(transporters[[2]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "cadetblue4", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill =  c("powderblue", "lightblue1"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 5. Transport-associated genes (Cluster 2).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+
+table_6  <- ggtexttable(transporters[[3]], rows = NULL,
+                          theme = ttheme(
+                          base_size = base_size,
+                          padding = unit(c(1.5, 1.5), "mm"),
+                          colnames.style = colnames_style(size = 7, fill = "cadetblue4", color = "white"),
+                          rownames.style = rownames_style(size = base_size),
+                          tbody.style = tbody_style(size = base_size, fill = c("powderblue", "lightblue1"))
+                        )) %>%
+                              tab_add_title(text = 'S-Table 5. Transport-associated genes (Cluster 3).', face = "bold", size = 6, padding = unit(.3, "line"), hjust = 0) %>%
+                              tab_add_footnote(text = "(Masked model)", size = 8, face = "italic",  padding = unit(.5, "line"))
+
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_1_Masked.png", table_1, dpi = 300, width = 3, height = 2.8,bg = "white")
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_2_Masked.png", table_2, dpi = 200, width = 3, height = 3,bg = "white")
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_3_Masked.png", table_3, dpi = 300, width = 3, height = 2.3,bg = "white")
+
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_4_Masked.png", table_4, dpi = 200, width = 3, height = .7,bg = "white")
+
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_5_Masked.png", table_5, dpi = 200, width = 3, height = 1.2,bg = "white")
+setwd("/DeepenData/Repos/geometric_cobra"); ggsave("./results/figures/supplementary/table_6_Masked.png", table_6, dpi = 150, width = 3, height = .6,bg = "white")
+
+```
 
 
 
