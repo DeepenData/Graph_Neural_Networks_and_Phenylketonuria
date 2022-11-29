@@ -185,7 +185,7 @@ def add_metabolite_concentration_features(grafo_nx_input,feature_data,feature_na
         inplace=True
     )
 
-    number_to_fill_in = int(1)
+    number_to_fill_in = int(1e-5)
 
     feature_data[
         [item for item in node_list if item not in feature_data.columns.tolist()]
@@ -222,7 +222,7 @@ def make_PYG_graph_from_grafo_nx(nx_G_in):
     
     x_attribute     = nx.get_node_attributes(nx_G, "x")
     longest_feature = max(len(v) for k,v in x_attribute.items())
-    assert pyg_graph.x.shape[1]  == pyg_graph.num_features == longest_feature # == flux_samples.shape[0]
+    assert pyg_graph.x.shape[1]  == pyg_graph.num_features == longest_feature # == 
     assert graph_data_check(nx_G, pyg_graph, target_node = 'phe_L_c')
     assert graph_data_check(nx_G, pyg_graph, target_node = 'r0399')
     assert not pyg_graph.is_directed()
