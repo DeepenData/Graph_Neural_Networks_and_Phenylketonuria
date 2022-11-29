@@ -26,3 +26,4 @@ tmp/
 **/*.parquet
 **/*.GraphML
 **/*.graphml
+**/*.mat
