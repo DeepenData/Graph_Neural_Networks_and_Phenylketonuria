@@ -11,7 +11,7 @@ library(ggpubr)
 setwd("/DeepenData/Repos/geometric_cobra")
 
 #metabolite_data        <- read_csv("./metabolites_data/metabolite_data.csv")
-subsys_fluxes_non_zero <- arrow::read_parquet("./results/flux/subsys_fluxes_non_zero.parquet.gzip")
+#subsys_fluxes_non_zero <- arrow::read_parquet("./results/flux/subsys_fluxes_non_zero.parquet.gzip")
 metabolite_data        <- arrow::read_parquet("./metabolites_data/metabolites_outliers_imputed.parquet.gzip")
 
 
@@ -71,7 +71,7 @@ a_subplot <-plot_split_violins(metabolite_data, 5 , vars_by_quntl, 'top', TRUE, 
 b_subplot <- plot_split_violins(metabolite_data, 4 , vars_by_quntl, 'none', F, .02, .01)
 c_subplot <- plot_split_violins(metabolite_data, 3 , vars_by_quntl, 'none', F, .02, .01)
 d_subplot <- plot_split_violins(metabolite_data, 2 , vars_by_quntl, 'none', F, .02, .01)
-e_subplot <- plot_split_violins(metabolite_data, 2 , vars_by_quntl, 'none', F, .02, .01)
+e_subplot <- plot_split_violins(metabolite_data, 1 , vars_by_quntl, 'none', F, .02, .01)
 ```
 
 

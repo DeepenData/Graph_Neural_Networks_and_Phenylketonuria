@@ -111,7 +111,7 @@ plot_swarm_panel <- function(dropped_patients_done, size, alpha){
                               vars_q_1 <- vars_mean[vars_mean < q_25,] %>% names 
                               vars_q_2 <- vars_mean[q_25 <= vars_mean & vars_mean < q_50,] %>% names 
                               vars_q_3 <- vars_mean[q_50 <= vars_mean &   vars_mean < q_75,] %>% names 
-                              vars_q_4 <- vars_mean[q_75 <= vars_mean ,] %>% names 
+                              vars_q_4 <- vars_mean[                          q_75 <= vars_mean ,] %>% names 
                               
                               dropped_patients_done[vars_q_1] %>% plot_swarm(size, alpha) -> vars_q_1_PLOT
                               dropped_patients_done[vars_q_2] %>% plot_swarm(size, alpha)  -> vars_q_2_PLOT
@@ -127,12 +127,12 @@ plot_swarm_panel <- function(dropped_patients_done, size, alpha){
 ```{r fig.height=7, fig.width=5}
 remove_outliers_patients(healthy_numeric, 0.25, .75)         -> healthy_outliers_removed
 impute_data_with_mixgb(healthy_outliers_removed)  -> healthy_outliers_inputation_done
-#healthy_outliers_inputation_done %>% plot_swarm_panel(.01, .1)
+healthy_outliers_inputation_done %>% plot_swarm_panel(.01, .1)
 ```
 
 
 ```{r fig.height=9, fig.width=5}
-remove_outliers_patients(PKU_numeric, 0.15, .85)         -> PKU_outliers_removed
+remove_outliers_patients(PKU_numeric, 0.25, .75)         -> PKU_outliers_removed
 impute_data_with_mixgb(PKU_outliers_removed)  -> PKU_outliers_inputation_done
 #PKU_outliers_inputation_done %>% plot_swarm_panel(.5, .7)
 ```
@@ -209,6 +209,12 @@ plot_split_violins <- function(data, quntl_num, legend.position){
 
 ```{r fig.height=4, fig.width=8}
 
+data
+
+```
+
+
+```{r fig.height=4, fig.width=8}
 library(ggpubr)
 
 
@@ -239,13 +245,11 @@ arrow::write_parquet(data, "./metabolites_data/metabolites_outliers_imputed.parq
 
 ```
 
-```{r fig.height=4, fig.width=8}
 
 
 setwd("/DeepenData/Repos/geometric_cobra")
 
 ggsave('my_panel.png', my_panel, height = 4, width = 8, bg = "white")
-```
 #####################################
 #######################################
 ######################################
