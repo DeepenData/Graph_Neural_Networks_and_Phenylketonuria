@@ -442,3 +442,242 @@ class GIN_classifier_to_explain_v2(torch.nn.Module):
 from torch_geometric.nn.models import GIN
 from torch_geometric.nn.models import GAT
 from torch_geometric.nn.models import GCN
+
+class my_GNN(torch.nn.Module):
+    
+    def __init__(
+        self, 
+        model:str ,
+        n_classes: int,
+        n_nodes : int, 
+        num_features : int, 
+        out_channels: int = 8,
+        dropout : float = 0.05, 
+        hidden_dim : int = 8, 
+        LeakyReLU_slope : float = 0.01,
+        num_layers: int = 2,
+        
+        
+    ):
+        super(my_GNN, self).__init__() # TODO: why SUPER gato? 
+        self.n_nodes = n_nodes
+        self.n_classes = n_classes
+        self.dropout = dropout
+        self.num_features = num_features
+        self.out_channels = out_channels
+        self.model        = model
+        
+        if self.model == "GCN":    
+            self.GNN_layers =  GCN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+                                out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False) 
+    
+        elif self.model == "GAT":        
+             self.GNN_layers =  GAT(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+                                    out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False) 
+
+        elif self.model == "GIN":
+             self.GNN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+                                    out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False)
+        
+        #self.GIN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+        #                       out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False)              
+        self.FC1          = Linear(in_features=out_channels, out_features=1, bias=True)
+        self.FC2          = Linear(in_features= self.n_nodes, out_features=self.n_classes, bias=True)
+        #self.FC          = Linear(in_features=out_channels, out_features=1, bias=True)           
+           
+        self.leakyrelu  = LeakyReLU(LeakyReLU_slope)#.to('cuda')
+    def forward(self, x, edge_index, batch):
+        batch_size = batch.unique().__len__()
+
+        x     = self.GNN_layers(x, edge_index)
+        x     = x.reshape(batch_size, self.n_nodes, self.out_channels)
+        x     = self.FC1(self.leakyrelu(x))
+        x     = x.reshape(batch_size,  self.n_nodes)       
+        x     = self.FC2(self.leakyrelu(x))    
+
+        return torch.nn.functional.log_softmax(x, dim=1)
+    
+    
+def train_one_epoch(modelo: GIN_classifier_to_explain_v2,
+                    optimizer, 
+                    train_loader: torch_geometric.loader.dataloader.DataLoader,
+                    loss_fun: torch.nn.modules.loss,
+                    device:str='cpu' ):
+
+    correct = 0
+    for i, data in enumerate(train_loader):
+        assert not data.is_cuda   
+        if (device == 'cuda:0') | (device == 'cuda'):                            
+            data.to(device, non_blocking=True) 
+            assert data.is_cuda       
+                
+        optimizer.zero_grad(set_to_none=True) # Zero your gradients for every batch        
+        if (device == 'cuda:0') | (device == 'cuda'):
+            #with torch.cuda.amp.autocast():      
+            predictions = modelo(data.x, data.edge_index,  data.batch)# Make predictions for this batch
+            loss        = loss_fun(predictions, data.y)
+            loss.backward()  # Derive gradients.
+            optimizer.step()  # Update parameters based on gradients.        
+            pred     = predictions.argmax(dim=1)  # Use the class with highest probability.
+            correct += int((pred == data.y).sum())  # Check against ground-truth labels.
+
+    return correct / len(train_loader.dataset)
+
+def validate(modelo: GIN_classifier_to_explain_v2, loader: DataLoader, device: str = 'cpu'):
+    modelo.eval()
+    correct = 0
+    for i, val_data in enumerate(loader):
+        
+        assert not val_data.is_cuda
+        if (device == 'cuda:0') | (device == 'cuda'):
+            val_data.to(device, non_blocking=True) 
+            assert val_data.is_cuda                          
+
+        val_predictions = modelo(val_data.x, val_data.edge_index,  val_data.batch)# Make predictions for this batch
+        pred            = val_predictions.argmax(dim=1)
+
+        correct += int((pred == val_data.y).sum())
+        
+
+    return correct / len(loader.dataset)   
+
+
+import os
+
+def train_and_validate(gnn_type, mask, flux, loader_path , EPOCHS, save, verbose, saving_folder, device:str="cuda"):
+    
+    
+    if not mask and not flux:
+        assert "loader_only_Concen.pt"        == os.path.basename(loader_path)
+        
+    elif not mask and flux:
+        assert "loader_Concen_plus_Fluxes.pt" == os.path.basename(loader_path)
+        
+    elif mask and not flux:
+        assert "MASKED_loader_only_Concen.pt" == os.path.basename(loader_path)
+        
+    elif mask and not flux:
+        assert "MASKED_loader_Concen_plus_Fluxes.pt" == os.path.basename(loader_path)
+    loader = torch.load(loader_path)
+
+    a_batch         = next(iter(loader.get_train_loader()))
+    a_graph         = a_batch[0]
+    
+    model           = my_GNN( model=gnn_type,
+                                            n_nodes = a_graph.num_nodes, 
+                                            num_features = a_graph.num_node_features, 
+                                            n_classes = a_graph.num_classes,
+                                            hidden_dim=8,
+                                            num_layers=3).to(device, non_blocking=True).to(device)
+    
+    
+    optimizer       = torch.optim.Adam(model.parameters())
+    loss_function   = torch.nn.NLLLoss()
+    gc.collect()
+    torch.cuda.empty_cache() 
+    model_type = model.GNN_layers.__class__.__name__
+
+
+    
+    all_train_accuracy_Unmasked = []
+    all_validation_accuracy_Unmasked = []
+    best_validation_accuracy = 1e-10
+    for epoch in tqdm.tqdm(range(EPOCHS)):
+        
+        train_accuracy = train_one_epoch(model,
+                            optimizer=optimizer, 
+                            train_loader=loader.get_train_loader(),
+                            loss_fun=loss_function,
+                            device = device)
+
+        validation_accuracy = validate(model, loader.get_validation_loader(), device)
+        
+        all_train_accuracy_Unmasked.extend([train_accuracy])
+        all_validation_accuracy_Unmasked.extend([validation_accuracy])
+        
+        
+        if validation_accuracy > best_validation_accuracy:
+            best_validation_accuracy = validation_accuracy
+            del validation_accuracy
+            best_val_state_dict   = copy.deepcopy(model.state_dict())
+            best_val_model        = copy.deepcopy(model)
+            
+            if verbose:
+                timestamp     = datetime.now().strftime('%d-%m-%Y_%Hh_%Mmin')              
+                print(f'{model_type = } {flux = } {mask = } Epoch: {epoch:03d}, train_accuracy: {train_accuracy:.4f}, best_validation_accuracy: {best_validation_accuracy:.4f}')
+                
+                if save:
+                    path = f"{saving_folder}Flux/" if flux else f"{saving_folder}Non_flux/"
+                    path = f"{path}Masked/" if mask else f"{path}Non_masked/"+ model_type 
+                               
+                    model_path = path +'/Model_{}_{}_best_ValAcc_{}_epoch_{}.pt'.format(model_type,timestamp, best_validation_accuracy, epoch)
+                    torch.save(best_val_model, model_path)
+                    print(f"saved as {model_path}")
+                    
+    return best_val_model, all_train_accuracy_Unmasked, all_validation_accuracy_Unmasked
+
+
+from sklearn.metrics import roc_curve, auc
+
+
+
+def get_ROC_parameters(model, test_loader, device:str="cuda"):
+
+    tprs            = []
+    aucs = []
+    base_fpr = np.linspace(0, 1, 101)
+    for i, test_data in enumerate(test_loader):
+            
+        assert not test_data.is_cuda
+        if (device == 'cuda:0') | (device == 'cuda'):
+            test_data.to(device, non_blocking=True) 
+            assert test_data.is_cuda                          
+
+        test_predictions = model(test_data.x, test_data.edge_index,  test_data.batch)# Make predictions for this batch
+        pred            = test_predictions.argmax(dim=1)
+        y_batch         = test_data.y
+        
+        y_pred_tag = pred.squeeze().cpu().int().tolist()
+        y_true     = y_batch.squeeze().cpu().int().tolist()
+        fpr, tpr, _ = roc_curve(y_true, y_pred_tag)
+        roc_auc = auc(fpr, tpr)
+        aucs.append(roc_auc)
+        tpr = np.interp(base_fpr, fpr, tpr)
+        tpr[0] = 0.0
+        tprs.append(tpr)
+
+
+    tprs = np.array(tprs)
+    mean_tprs = tprs.mean(axis=0)
+    mean_auc = auc(base_fpr, mean_tprs)
+    std_auc = np.std(aucs)
+
+
+    tprs_upper = np.minimum(mean_tprs + tprs.std(axis=0), 1)
+    tprs_lower = mean_tprs - tprs.std(axis=0)
+    
+    return base_fpr, mean_tprs, tprs_lower, tprs_upper, mean_auc, std_auc
+
+def put_ROC_in_subplot(base_fpr, mean_tprs, tprs_lower,
+                   tprs_upper, mean_auc, std_auc, AX, xlabel:str='', letter:str=''):
+    
+    AX.plot(base_fpr, mean_tprs, 'b', alpha = 0.8, label=r'Test set ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),)
+    AX.fill_between(base_fpr, tprs_lower, tprs_upper, color = 'blue', alpha = 0.2)
+    AX.plot([0, 1], [0, 1], linestyle = '--', lw = 2, color = 'r', label = 'Random', alpha= 0.8)
+
+    #ax1.plot(fpr, tpr, lw=1, alpha=0.6, label='ROC fold %d (AUC = %0.2f)' % (i, roc_auc), c = colors[i])
+
+    AX.legend(loc="lower right", fontsize=7.5)
+    AX.set_ylabel('True Positive Rate')
+    AX.set_xlabel(xlabel)
+    AX.set_title(letter, fontsize = 12,  fontweight ="bold", loc='left')
+    
+    
+def put_Learning_curve(all_train_accuracy, all_validation_accuracy, AX, letter):
+    AX.plot(all_train_accuracy,  label = "Train set", linestyle="--")
+    AX.plot(all_validation_accuracy,  label = "Validation set", linestyle="-")
+    AX.legend(loc="lower right", fontsize=11)
+    AX.set_ylabel('Accuracy (%)')
+    AX.set_xlabel("Epochs")
+    AX.set_ylim(0.4, 1.1)
+    AX.set_title(letter, fontsize = 12,  fontweight ="bold", loc='left')
