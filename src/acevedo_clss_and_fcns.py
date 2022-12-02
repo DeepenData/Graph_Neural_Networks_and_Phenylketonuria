@@ -185,7 +185,7 @@ def add_metabolite_concentration_features(grafo_nx_input,feature_data,feature_na
         inplace=True
     )
 
-    number_to_fill_in = int(1)
+    number_to_fill_in = 1e-5#int(1)
 
     feature_data[
         [item for item in node_list if item not in feature_data.columns.tolist()]
@@ -311,132 +311,6 @@ class GIN_classifier(torch.nn.Module):
         x     = x.reshape(batch_size, 2)
         return   torch.nn.functional.log_softmax(x, dim=1).squeeze()
     
-    
-    
-def Adcanced_train_one_epoch(modelo: GIN_classifier,
-                    optimizer, 
-                    train_loader: torch_geometric.loader.dataloader.DataLoader,
-                    loss_fun: torch.nn.modules.loss,
-                    scaler:torch.cuda.amp.grad_scaler.GradScaler,
-                    swa_start:int,
-                    swa_model,swa_scheduler,scheduler, 
-                    n_batches_report:int, device:str='cpu' ):
-    running_loss = 0.
-    last_loss = 0.
-    for i, data in enumerate(train_loader):
-        assert not data.is_cuda   
-        if (device == 'cuda:0') | (device == 'cuda'):                            
-            data.to(device, non_blocking=True) 
-            assert data.is_cuda
-        
-                
-        optimizer.zero_grad(set_to_none=True) # Zero your gradients for every batch
-        
-        if (device == 'cuda:0') | (device == 'cuda'):
-            with torch.cuda.amp.autocast():      
-                predictions = modelo(data)# Make predictions for this batch
-                loss        = loss_fun(predictions, data.y.long())
-            scaler.scale(loss).backward()
-
-            if (i+1) % 2 == 0:  
-                if i > swa_start:
-                    swa_model.update_parameters(modelo)
-                    swa_scheduler.step()
-                else:
-                    scheduler.step()
-            
-            #check_seen_y.extend(data.y.squeeze().tolist())
-            #loss.backward()  # Derive gradients.
-                scaler.step(optimizer)
-                scaler.update()
-            #optimizer.step()  # Update parameters based on gradients.
-                running_loss += loss.item()
-                 
-            
-        else:
-            with torch.cuda.amp.autocast():
-                predictions = modelo(data)# Make predictions for this batch
-                loss        = loss_fun(predictions, data.y.long())
-            loss.backward()
-            if (i+1) % 2 == 0:  
-                if i > swa_start:
-                    swa_model.update_parameters(modelo)
-                    swa_scheduler.step()
-                else:
-                    scheduler.step()
-                optimizer.step()
-                running_loss += loss.item()   
-            
-        
-    
-
-            
-        #It reports on the loss for every 100 batches.
-        if i % n_batches_report == 99:
-            last_loss = running_loss / n_batches_report
-            running_loss = 0.
-    torch.optim.swa_utils.update_bn(train_loader, swa_model, device=device)
-    return last_loss
-
-
-
-
-
-def train_and_validate(modelo,loss_fun,optimizer, EPOCHS ,train_loader,validation_loader, 
-                       validation_cycle:int = 4,
-                       save_state_dict:bool = False,save_entire_model:bool = False,verbose:bool= False,
-                       device:str='cpu', n_batches_report:int = 50, saving_path: str = '', tunning_mode:bool=False):
-    
-    modelo.to(device, non_blocking=True)
-    scaler        = torch.cuda.amp.GradScaler()
-    timestamp     = datetime.now().strftime('%d-%m-%Y_%Hh_%Mmin')    
-    swa_model     = torch.optim.swa_utils.AveragedModel(modelo).to(device, non_blocking=True)    
-    scheduler     = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=300)
-    swa_start     = 25
-    swa_scheduler = SWALR(optimizer, swa_lr=0.05)
-    epoch_number  = 0
-    best_vloss    = 1e-10
-    state_dict_path = None
-    model_path      = None
-    for epoch in tqdm.tqdm(range(EPOCHS)):
-
-        modelo.train(True)
-        avg_loss  = Adcanced_train_one_epoch(modelo, optimizer,train_loader, loss_fun, scaler, swa_start, swa_model, swa_scheduler, scheduler,
-                                    n_batches_report = n_batches_report, device=device) 
-        if epoch % validation_cycle == 0:
-            avg_vloss = validate(modelo, loss_fun, validation_loader, device=device )                
-        
-        
-        if avg_vloss > best_vloss:
-            best_vloss            = avg_vloss
-            best_val_state_dict   = copy.deepcopy(modelo.state_dict())
-            best_val_model        = copy.deepcopy(modelo)
-            if verbose:
-                print(f"new best_val_model {best_vloss = }")
-            
-            
-            if save_state_dict:
-                state_dict_path = saving_path+'/state_dicts/State_Dict_{}_{}_best_vloss_{}_epoch_{}'.format(
-                                                                modelo.__class__.__name__,timestamp, best_vloss, epoch_number)
-                torch.save(modelo.state_dict(), state_dict_path)
-                if verbose:
-                    print(f"best state_dict saved as {state_dict_path}")
-                    
-            if save_entire_model:
-                model_path = saving_path+'/models/Model_{}_{}_best_vloss_{}_epoch_{}.pt'.format(
-                                                                modelo.__class__.__name__,timestamp, best_vloss, epoch_number)
-                torch.save(best_val_model, model_path)
-                if verbose:
-                    print(f"best model saved as {model_path}")
-                
-                    
-        epoch_number += 1
-    #last_best_state_dict = copy.deepcopy(state_dict_path)
-    if tunning_mode:
-        return best_vloss
-        
-    return best_val_model, state_dict_path, model_path
-    
 from sklearn.model_selection import train_test_split
 
     
@@ -448,38 +322,6 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.nn import GIN
 from torch_geometric.nn import global_mean_pool
 import torch
-
-class GCN(torch.nn.Module):
-    def __init__(self, hidden_channels):
-        super(GCN, self).__init__()
-        torch.manual_seed(12345)
-        
-        self.GIN_layers =  GIN(in_channels= 1, hidden_channels= hidden_channels, num_layers= 4, 
-                               out_channels= hidden_channels, dropout=0.1,  jk=None, 
-                               act='LeakyReLU', act_first = True)   
-        
-        #self.conv1 = GCNConv(1, hidden_channels)
-        #self.conv2 = GCNConv(hidden_channels, hidden_channels)
-        #self.conv3 = GCNConv(hidden_channels, hidden_channels)
-        self.lin = Linear(hidden_channels, 2, bias=True)
-
-    def forward(self, x, edge_index, batch):
-        # 1. Obtain node embeddings 
-        #x = self.conv1(x, edge_index)
-        #x = x.relu()
-        x = self.GIN_layers(x, edge_index)
-        #x = F.dropout(x, p=0.1)
-        x = x.relu()
-        #x = self.conv3(x, edge_index)
-
-        # 2. Readout layer
-        x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
-
-        # 3. Apply a final classifier
-        
-        x = self.lin(x)
-        
-        return F.log_softmax(x, dim=1) #x
 class batch_loader():
     
     def __init__(self, graphs: list, batch_size: int  =1*32, num_samples:int = None, validation_percent:float = .3):
@@ -596,3 +438,7 @@ class GIN_classifier_to_explain_v2(torch.nn.Module):
         x     = self.FC2(self.leakyrelu(x))    
 
         return torch.nn.functional.log_softmax(x, dim=1)
+    
+from torch_geometric.nn.models import GIN
+from torch_geometric.nn.models import GAT
+from torch_geometric.nn.models import GCN
