@@ -608,7 +608,7 @@ def train_and_validate(gnn_type, mask, flux, loader_path , EPOCHS, save, verbose
                 
                 if save:
                     path = f"{saving_folder}Flux/" if flux else f"{saving_folder}Non_flux/"
-                    path = f"{path}Masked/" if mask else f"{path}Non_masked/"+ model_type 
+                    path = f"{path}Masked/{model_type}" if mask else f"{path}Non_masked/{model_type}" 
                                
                     model_path = path +'/Model_{}_{}_best_ValAcc_{}_epoch_{}.pt'.format(model_type,timestamp, best_validation_accuracy, epoch)
                     torch.save(best_val_model, model_path)
