@@ -207,7 +207,8 @@ def graph_data_check(nx_G, pyg_graph, target_node):
     producto_idx      = list(nx_G.nodes()).index(target_node)
     producto_features = nx_G.nodes()[target_node]['x']
 
-    if np.allclose(pyg_graph.x[producto_idx,:].numpy()[0:producto_features.__len__()], np.array(producto_features), 1e-7, 1e-10):
+    if np.allclose(pyg_graph.x[producto_idx,:].numpy()[0:producto_features.__len__()], 
+                   np.array(producto_features), 1e-7, 1e-10):
         return True
     else:
         False
@@ -455,7 +456,7 @@ class my_GNN(torch.nn.Module):
         dropout : float = 0.05, 
         hidden_dim : int = 8, 
         LeakyReLU_slope : float = 0.01,
-        num_layers: int = 2,
+        num_layers: int = 1,
         
         
     ):
@@ -568,7 +569,7 @@ def train_and_validate(gnn_type, mask, flux, loader_path , EPOCHS, save, verbose
                                             num_features = a_graph.num_node_features, 
                                             n_classes = a_graph.num_classes,
                                             hidden_dim=8,
-                                            num_layers=3).to(device, non_blocking=True).to(device)
+                                            num_layers=1).to(device, non_blocking=True).to(device)
     
     
     optimizer       = torch.optim.Adam(model.parameters())
