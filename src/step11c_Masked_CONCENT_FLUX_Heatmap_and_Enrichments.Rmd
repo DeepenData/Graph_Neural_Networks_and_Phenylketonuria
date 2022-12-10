@@ -22,29 +22,37 @@ library(org.Hs.eg.db)
 library(fastcluster)
 setwd("/DeepenData/Repos/geometric_cobra")
 
-df     <-  read_csv("./results/dataframes/to_R_heatmap_explanatory_subgraph_MASKED_GCN_Fluxes.csv") %>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
-labels <- read_csv("./results/dataframes/labels_masked_only_Fluxes.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
+df     <-  read_csv("./results/dataframes/to_R_heatmap_explanatory_subgraph_MASKED_GCN_Concen_plus_Fluxes.csv") %>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
+labels <- read_csv("./results/dataframes/labels_masked_Concen_plus_Fluxes.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
 edge_weights_x_patients <- df%>%  dplyr::select_if(is.numeric)
 edges_genes   <- df%>%  dplyr::select_if(is.character)
 n_edges <- nrow(edges_genes)
 n_patients <- length(labels)
 edges_mask    <- sample(c(T,F), n_edges, replace = T, prob = c(1, 0))
-patients_mask <- sample(c(T,F), n_patients, replace = T, prob = c(.5, 0.5))
+patients_mask <- sample(c(T,F), n_patients, replace = T, prob = c(1, 0))
 edge_weights_x_patients_SAMPLE <- edge_weights_x_patients[edges_mask,patients_mask]
 labels_SAMPLE <- labels[patients_mask]
 edges_genes_SAMPLE <- edges_genes[edges_mask,]
 processed_data <- edge_weights_x_patients_SAMPLE %>% as.matrix() %>% rescale
 dim(processed_data)
 #view(edges_genes)
+#view(df)
 ```
-```{r}
-labels_SAMPLE
 
+
+
+```{r message=FALSE, warning=FALSE}
+n_edges
+n_patients
 ```
+
+
+
 
 
 ```{r message=FALSE, warning=FALSE}
 rowSums(processed_data) %>% as.vector() -> edge_scores
+
 right_annotation <- rowAnnotation( gp = gpar(fontsize = 2), Group = labels_SAMPLE,
                                         col = list(fontsize = 2, Group = c(
                                        'Control'        = "darkgreen",
@@ -65,7 +73,7 @@ ht <- Heatmap(t(processed_data),
               cluster_rows              =  function(x) fastcluster::hclust(dist(x), "centroid"),
               name = "Edge weight",
               border = TRUE,
-              row_km = 2, 
+              #row_km = 2, 
               column_km = 3,  
               row_gap = unit(2, "mm"),
               column_gap = unit(2, "mm"),

@@ -29,7 +29,7 @@ edges_genes   <- df%>%  dplyr::select_if(is.character)
 n_edges <- nrow(edges_genes)
 n_patients <- length(labels)
 edges_mask    <- sample(c(T,F), n_edges, replace = T, prob = c(1, 0))
-patients_mask <- sample(c(T,F), n_patients, replace = T, prob = c(.5, 0.5))
+patients_mask <- sample(c(T,F), n_patients, replace = T, prob = c(1, 0))
 edge_weights_x_patients_SAMPLE <- edge_weights_x_patients[edges_mask,patients_mask]
 labels_SAMPLE <- labels[patients_mask]
 edges_genes_SAMPLE <- edges_genes[edges_mask,]
@@ -37,8 +37,15 @@ processed_data <- edge_weights_x_patients_SAMPLE %>% as.matrix() %>% rescale
 dim(processed_data)
 #view(edges_genes)
 ```
-```{r}
-labels_SAMPLE
+```{r message=FALSE, warning=FALSE}
+edge_weights_x_patients %>% rowSums() -> all_edge_scores
+
+
+edges_genes['all_edge_scores'] <- all_edge_scores
+
+?arrange
+
+edges_genes %>% dplyr::arrange(desc(all_edge_scores))
 
 ```
 
