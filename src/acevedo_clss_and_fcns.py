@@ -545,20 +545,18 @@ def validate(modelo: GIN_classifier_to_explain_v2, loader: DataLoader, device: s
 
 import os
 
-def train_and_validate(gnn_type, mask, flux, loader_path , EPOCHS, save, verbose, saving_folder, device:str="cuda"):
+def train_and_validate(gnn_type, mask, flux, concentration, loader_path , EPOCHS, save, verbose, saving_folder, device:str="cuda"):
     
     
-    if not mask and not flux:
-        assert "loader_only_Concen.pt"        == os.path.basename(loader_path)
+    if mask and flux and not concentration:
+        assert "MASKED_loader_only_Fluxes.pt" == os.path.basename(loader_path)
         
-    elif not mask and flux:
-        assert "loader_Concen_plus_Fluxes.pt" == os.path.basename(loader_path)
-        
-    elif mask and not flux:
+    elif mask and not flux and concentration:
         assert "MASKED_loader_only_Concen.pt" == os.path.basename(loader_path)
-        
-    elif mask and not flux:
-        assert "MASKED_loader_Concen_plus_Fluxes.pt" == os.path.basename(loader_path)
+
+    elif mask and  flux and concentration:
+        assert "MASKED_loader_Concen_plus_Fluxes.pt" == os.path.basename(loader_path)  
+    
     loader = torch.load(loader_path)
 
     a_batch         = next(iter(loader.get_train_loader()))
@@ -608,8 +606,21 @@ def train_and_validate(gnn_type, mask, flux, loader_path , EPOCHS, save, verbose
                 print(f'{model_type = } {flux = } {mask = } Epoch: {epoch:03d}, train_accuracy: {train_accuracy:.4f}, best_validation_accuracy: {best_validation_accuracy:.4f}')
                 
                 if save:
-                    path = f"{saving_folder}Flux/" if flux else f"{saving_folder}Non_flux/"
-                    path = f"{path}Masked/{model_type}" if mask else f"{path}Non_masked/{model_type}" 
+                    #path = f"{saving_folder}Flux/" if flux else f"{saving_folder}Non_flux/"
+                    #path = f"{path}Masked/{model_type}" if mask else f"{path}Non_masked/{model_type}" 
+                    path = f"{saving_folder}Masked/{model_type}" if mask else f"{saving_folder}Non_masked/{model_type}" 
+
+                    
+                    if "MASKED_loader_only_Fluxes.pt" == os.path.basename(loader_path):
+                        path = f"{path}/Fluxes"
+                        
+                    elif "MASKED_loader_only_Concen.pt" == os.path.basename(loader_path):
+                        path = f"{path}/Concentration"
+                        
+                    elif "MASKED_loader_Concen_plus_Fluxes.pt" == os.path.basename(loader_path):
+                        path = f"{path}/Concen_plus_Fluxes"
+                    
+                    
                                
                     model_path = path +'/Model_{}_{}_best_ValAcc_{}_epoch_{}.pt'.format(model_type,timestamp, best_validation_accuracy, epoch)
                     torch.save(best_val_model, model_path)
