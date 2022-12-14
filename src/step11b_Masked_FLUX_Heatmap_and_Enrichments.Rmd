@@ -20,79 +20,142 @@ library(clusterProfiler)
 library(ReactomePA)
 library(org.Hs.eg.db)
 library(fastcluster)
+```
+
+
+```{r message=FALSE, warning=FALSE}
 setwd("/DeepenData/Repos/geometric_cobra")
 
 df     <-  read_csv("./results/dataframes/to_R_heatmap_explanatory_subgraph_MASKED_GCN_Fluxes.csv") %>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
 labels <- read_csv("./results/dataframes/labels_masked_only_Fluxes.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
-edge_weights_x_patients <- df%>%  dplyr::select_if(is.numeric)
-edges_genes   <- df%>%  dplyr::select_if(is.character)
-n_edges <- nrow(edges_genes)
-n_patients <- length(labels)
-edges_mask    <- sample(c(T,F), n_edges, replace = T, prob = c(1, 0))
-patients_mask <- sample(c(T,F), n_patients, replace = T, prob = c(1, 0))
-edge_weights_x_patients_SAMPLE <- edge_weights_x_patients[edges_mask,patients_mask]
-labels_SAMPLE <- labels[patients_mask]
-edges_genes_SAMPLE <- edges_genes[edges_mask,]
-processed_data <- edge_weights_x_patients_SAMPLE %>% as.matrix() %>% rescale
-dim(processed_data)
-#view(edges_genes)
+get_processed_data <- function(df, percentile,labels){
+                                  edge_weights_x_patients <- df%>%  dplyr::select_if(is.numeric)
+                                  edge_weights_x_patients %<>% t %>% scale %>% t   %>%as.data.frame()
+                                  edge_weights_x_patients %>% abs()   %>%  rowSums() -> all_edge_scores
+                                  edges_genes   <- df%>%  dplyr::select_if(is.character)
+                                  edges_genes['all_edge_scores'] <- all_edge_scores
+                                  #edges_genes %>% dplyr::arrange(desc(all_edge_scores))
+                                  cutoff <- quantile(all_edge_scores, probs =percentile )
+                                  mask <- all_edge_scores > cutoff
+                                  edges_genes[mask,] -> edges_genes#%>% arrange(desc(all_edge_scores))
+                                  edge_weights_x_patients[mask,] -> edge_weights_x_patients
+                                  rownames(edge_weights_x_patients) <- NULL
+                                  n_edges <- nrow(edges_genes)
+                                  n_patients <- length(labels)
+                                  edges_mask    <- sample(c(T,F), n_edges, replace = T, prob = c(1, 0))
+                                  patients_mask <- sample(c(T,F), n_patients, replace = T, prob = c(1, 0))
+                                  edge_weights_x_patients_SAMPLE <- edge_weights_x_patients[edges_mask,patients_mask]
+                                  labels_SAMPLE <- labels[patients_mask]
+                                  edges_genes_SAMPLE <- edges_genes[edges_mask,]
+                                  processed_data <- edge_weights_x_patients_SAMPLE %>% as.matrix() %>% rescale
+                                  return(list(processed_data,all_edge_scores,cutoff, labels_SAMPLE, edges_genes_SAMPLE,mask))
+  
+}
+
 ```
+
+
 ```{r message=FALSE, warning=FALSE}
-edge_weights_x_patients %>% rowSums() -> all_edge_scores
+make_heatmap <- function(processed_data, all_edge_scores, cutoff,labels_SAMPLE, small = T){
+                                                                  all_edge_scores[all_edge_scores > cutoff]-> edge_scores
+                                                                  processed_data %>% as.data.frame() ->processed_data_df
+                                                                  processed_data_df['edge_scores'] <- edge_scores
+                                                                  processed_data_df %>% arrange(desc(edge_scores)) -> processed_data_df_sorted
+                                                                  processed_data_df_sorted %>% dplyr::pull('edge_scores') -> edge_scores_sorted
+                                                                  processed_data_df_sorted['edge_scores'] <- NULL
+                                                                  
+
+                                                                  
+                                                                  right_annotation <- rowAnnotation( gp = gpar(fontsize = 2), 'Group' = labels_SAMPLE,
+                                                                                                          col = list(fontsize = 2, 'Group' = c(
+                                                                                                         'Control'        = "darkgreen",
+                                                                                                         'PKU'           =  "gold"))) 
+                                                                  
+                                                                      if(small){
+                                                                               top_annotation <- columnAnnotation(
+                                                                                 `Score` = anno_lines(size = unit(.8, "mm"), pt_gp = gpar(col = 'red4'),add_points = TRUE,
+                                                                                                                          edge_scores_sorted %>% rescale(), height = unit(1, "cm")))
+                                                                                ht <- Heatmap( t(processed_data_df_sorted), 
+                                                                                                cluster_columns = F, 
+                                                                                                show_heatmap_legend = F,
+                                                                                                clustering_distance_rows  =  function(x) fastcluster::hclust(dist(x), "euclidean"),
+                                                                                                cluster_rows              =  function(x) fastcluster::hclust(dist(x), "ward.D"),
+                                                                                                show_column_names = F, 
+                                                                                                show_row_names = F, 
+                                                                                                show_row_dend = F,
+                                                                                                right_annotation = right_annotation,
+                                                                                                top_annotation   = top_annotation, 
+                                                                                                border = TRUE)
+                                                                                               return(ht)
+                                                                                                } else{
+                                                                                                                                                                                 top_annotation <- columnAnnotation(
+                                                                                 `Score` = anno_lines(size = unit(1, "mm"), pt_gp = gpar(col = 'red4'),add_points = TRUE,
+                                                                                                                          edge_scores_sorted %>% rescale(), height = unit(1, "cm")))
+                                                                                                  
+                                                                                ht <- Heatmap( t(processed_data_df_sorted), 
+                                                                                                #cluster_columns = T, 
+                                                                                                show_heatmap_legend = T,
+                                                                                                clustering_distance_columns  =  function(x) fastcluster::hclust(dist(x), "euclidean"),
+                                                                                                cluster_columns              =  function(x) fastcluster::hclust(dist(x), "ward.D2"),
+                                                                                                clustering_distance_rows  =  function(x) fastcluster::hclust(dist(x), "euclidean"),
+                                                                                                cluster_rows              =  function(x) fastcluster::hclust(dist(x), "ward.D2"),
+                                                                                                show_column_names = F, 
+                                                                                                show_row_names = F, 
+                                                                                                show_row_dend = T,
+                                                                                                show_column_dend = T,
+                                                                                                right_annotation = right_annotation,
+                                                                                                top_annotation   = top_annotation, 
+                                                                                                border = TRUE,
+                                                                                               #clustering_distance_columns  =  function(x) fastcluster::hclust(dist(x), "euclidean"),
+                                                                                               #cluster_columns              =  function(x) fastcluster::hclust(dist(x), "ward.D"),
+                                                                                               row_dend_width    = unit(3, "cm"),
+                                                                                               column_dend_height = unit(2.5,"cm"),
+                                                                                               name = "Weight",
+                                                                                               column_km = 2, column_gap = unit(2, "mm")
+                                                                                               )
+                                                                                
+                                                                                                return(ht)}}
+```
+
+```{r fig.height=1.5, fig.width=10, message=FALSE, warning=FALSE}
+data_plus_labels <- get_processed_data(df, 0.90,labels)
+
+data_plus_labels[[1]] -> processed_data
+data_plus_labels[[2]] -> all_edge_scores
+data_plus_labels[[3]] -> cutoff
+data_plus_labels[[4]] -> labels_SAMPLE
+
+make_heatmap(processed_data, all_edge_scores, cutoff,labels_SAMPLE, small = T)
+
+#
+```
+```{r fig.height=3.5, fig.width=10, message=FALSE, warning=FALSE}
+data_plus_labels <- get_processed_data(df, 0.99,labels)
+
+data_plus_labels[[1]] -> processed_data
+data_plus_labels[[2]] -> all_edge_scores
+data_plus_labels[[3]] -> cutoff
+data_plus_labels[[4]] -> labels_SAMPLE
+data_plus_labels[[5]] ->edges_genes_SAMPLE
+data_plus_labels[[6]] -> mask
 
 
-edges_genes['all_edge_scores'] <- all_edge_scores
 
-?arrange
+#df     <-  read_csv("./results/dataframes/to_visualization_explanatory_subgraph_MASKED_GCN_Concentration.csv") #%>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
+setwd("/DeepenData/Repos/geometric_cobra")
 
-edges_genes %>% dplyr::arrange(desc(all_edge_scores))
+write_csv(df[mask, ], "./results/dataframes/to_visualization_explanatory_subgraph_MASKED_GCN_FUX.csv")
+
+
+```{r fig.height=3.5, fig.width=10, message=FALSE, warning=FALSE}
+make_heatmap(processed_data, all_edge_scores, cutoff,labels_SAMPLE, small = F)
+
+
+
 
 ```
 
 
-```{r message=FALSE, warning=FALSE}
-rowSums(processed_data) %>% as.vector() -> edge_scores
-right_annotation <- rowAnnotation( gp = gpar(fontsize = 2), Group = labels_SAMPLE,
-                                        col = list(fontsize = 2, Group = c(
-                                       'Control'        = "darkgreen",
-                                       'PKU'           =  "gold"))) 
-
-
-top_annotation <- columnAnnotation(`TS` = anno_lines( pch = 26, size = unit(5, "mm"), gp = gpar(col = 'red4'),
-                                                        edge_scores, height = unit(1.5, "cm")))
-
-bottom_annotation <- HeatmapAnnotation(foo = anno_block(labels = c("C1", "C2", "C3"),labels_gp = gpar(col = "darkslategray", fontsize = 9),
-                                                        gp = gpar(fill = c("azure2","azure2","azure2","azure2"))))
-#densityHeatmap(t(processed_data),  ylim = c(0.02, 0.5),  ylab = "some values", show_quantiles = F, mc.cores =20, cores = 20,
-#               cluster_columns = TRUE,  clustering_distance_columns  =  function(x) fastcluster::hclust(dist(x), "euclidean"))  %v%
-ht <- Heatmap(t(processed_data),
-              clustering_distance_columns  =  function(x) fastcluster::hclust(dist(x), "cosine"),
-              cluster_columns              =  function(x) fastcluster::hclust(dist(x), "centroid"),
-              clustering_distance_rows  =  function(x) fastcluster::hclust(dist(x), "cosine"),
-              cluster_rows              =  function(x) fastcluster::hclust(dist(x), "centroid"),
-              name = "Edge weight",
-              border = TRUE,
-              row_km = 2, 
-              column_km = 3,  
-              row_gap = unit(2, "mm"),
-              column_gap = unit(2, "mm"),
-              width = unit(14.5, "cm"),
-               height = unit(4.5, "cm"),
-              show_column_names = F, 
-              show_row_names = F,
-              column_title = c( "Explanatory subgraph edges"),
-              column_title_gp = gpar(fontsize = 11),
-              row_title = c("Samples (patients)"),
-              row_title_gp = gpar(fontsize = 11),
-              
-             row_dend_width    = unit(1.5, "cm"),
-            column_dend_height = unit(1.5,"cm"),
-        top_annotation = top_annotation,
-        right_annotation = right_annotation,
-        bottom_annotation = bottom_annotation, heatmap_legend_param = list(direction = "horizontal"))
-
-heatmap_clusters <- waRRior::heatmap_extract_cluster(draw(ht), t(processed_data),  which = "column")
-```
 
 
 

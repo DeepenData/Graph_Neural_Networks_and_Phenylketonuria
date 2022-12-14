@@ -12,7 +12,6 @@ setwd("/DeepenData/Repos/geometric_cobra")
 
 #metabolite_data        <- read_csv("./metabolites_data/metabolite_data.csv")
 #subsys_fluxes_non_zero <- arrow::read_parquet("./results/flux/subsys_fluxes_non_zero.parquet.gzip")
-metabolite_data        <- arrow::read_parquet("./metabolites_data/metabolites_outliers_imputed.parquet.gzip")
 
 
 
@@ -42,17 +41,17 @@ foo <- function(plot){
                              )
                              
                             }
-plot_split_violins <- function(data, quntl_num,vars_by_quntl ,legend.position, logscale, alpha, size_marker){
-                          colours <- c(alpha(c( "dodgerblue2"), alpha), alpha(c("darkorange"), 1))
+plot_split_violins <- function(data, quntl_num,vars_by_quntl ,legend.position, logscale, alpha, size_marker, color_1, color_2){
+                          colours <- c(alpha(c( color_1), alpha), alpha(c(color_2), 1))
                           #data %>% get_vars_by_quntl -> vars_by_quntl
                           
                           
                           
-                          p <- data %>%  select(c(vars_by_quntl[[quntl_num]], "Group")) %>%  pivot_longer(-Group)  %>% 
+                          p <- data %>% dplyr::select(c(vars_by_quntl[[quntl_num]], "Group")) %>%  pivot_longer(-Group)  %>% 
                           ggplot(aes(name,value,color= Group))+ 
-                          geom_quasirandom(size= size_marker) + #scale_fill_manual(values = colours, name = "") +
+                          geom_quasirandom(size= c(size_marker)) + #scale_fill_manual(values = colours, name = "") +
                           theme_minimal()+
-                          guides(color = guide_legend(override.aes = list(size = 4, alpha = 1) ))+ 
+                          guides(color = guide_legend(override.aes = list(size = 3, alpha = 1) ))+ 
                           theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
                                   axis.title.y = element_blank(), legend.position=legend.position,
                                  legend.text = element_text(size=7))+scale_color_discrete(name="")+
@@ -62,27 +61,62 @@ plot_split_violins <- function(data, quntl_num,vars_by_quntl ,legend.position, l
                           
                           return(foo(p) %>% as_ggplot)  }
 
+generate_right_swarms <- function(metabolite_data, color_1="dodgerblue2", color_2="darkorange"){
+            metabolite_data %>% dplyr::select(-c('Phe')) %>% get_vars_by_quntl -> vars_by_quntl
+            
+            vars_by_quntl[[5]] <- c('Phe')
+            a_subplot <-plot_split_violins(metabolite_data, 5 , vars_by_quntl, 'top', TRUE, .1, .6, color_1=color_1, color_2=color_2)
+            b_subplot <- plot_split_violins(metabolite_data, 4 , vars_by_quntl, 'none', F, .02, .01, color_1=color_1, color_2=color_2)
+            c_subplot <- plot_split_violins(metabolite_data, 3 , vars_by_quntl, 'none', F, .02, .01, color_1=color_1, color_2=color_2)
+            d_subplot <- plot_split_violins(metabolite_data, 2 , vars_by_quntl, 'none', F, .02, .01, color_1=color_1, color_2=color_2)
+            e_subplot <- plot_split_violins(metabolite_data, 1 , vars_by_quntl, 'none', F, .02, .01, color_1=color_1, color_2=color_2)
+            right_swarms <- ggarrange(b_subplot, c_subplot, d_subplot, e_subplot, ncol = 1, labels = c("b","c","d","e"), vjust = 1.1, hjust = .5)
+            ggarrange(a_subplot, right_swarms, widths = c(.55, 1), labels = c("a",""), vjust = 1.1) -> swarm_panel
+            return(swarm_panel)
+}
 
-metabolite_data %>% dplyr::select(-c('Phe')) %>% get_vars_by_quntl -> vars_by_quntl
 
-vars_by_quntl[[5]] <- c('Phe')
+make_swarm_panel <- function(df){
+                            right_swarms <- generate_right_swarms(df)
+                            a_subplot <-plot_split_violins(df, 5 , vars_by_quntl, 'top', TRUE, .1, .6)
+                            ggarrange(a_subplot, right_swarms, widths = c(.55, 1), labels = c("a",""), vjust = 1.1) -> swarm_panel
+                            return(swarm_panel)
+}
 
-a_subplot <-plot_split_violins(metabolite_data, 5 , vars_by_quntl, 'top', TRUE, .1, .6)
-b_subplot <- plot_split_violins(metabolite_data, 4 , vars_by_quntl, 'none', F, .02, .01)
-c_subplot <- plot_split_violins(metabolite_data, 3 , vars_by_quntl, 'none', F, .02, .01)
-d_subplot <- plot_split_violins(metabolite_data, 2 , vars_by_quntl, 'none', F, .02, .01)
-e_subplot <- plot_split_violins(metabolite_data, 1 , vars_by_quntl, 'none', F, .02, .01)
 ```
 
 
 ```{r fig.height=6, fig.width=5, message=FALSE, warning=FALSE}
 
-right_swarms <- ggarrange(b_subplot, c_subplot, d_subplot, e_subplot, ncol = 1, labels = c("b","c","d","e"), vjust = 1.1, hjust = .5)
+setwd("/DeepenData/Repos/geometric_cobra")
+
+metabolites_outliers_imputed     <- arrow::read_parquet("./metabolites_data/metabolites_outliers_imputed.parquet.gzip")
+rownames(metabolites_outliers_imputed) <- NULL
+generate_right_swarms(metabolites_outliers_imputed)
+# a_subplot <-plot_split_violins(metabolites_outliers_imputed, 5 , vars_by_quntl, 'top', TRUE, .1, .6)
+```
 
 
 
-ggarrange(a_subplot, right_swarms, widths = c(.55, 1), labels = c("a",""), vjust = 1.1) -> swarm_panel
 
+```{r fig.height=6, fig.width=5, message=FALSE, warning=FALSE}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/augmented_metabolite_data_v2.parquet.gzip") 
+augmented_data <- augmented_metabolite_data %>%mutate(label = dplyr::if_else(label == 1, "PKU", "Control")) %>% rename(Group = label)
+
+aug_PKUs <-augmented_data %>% dplyr::filter(Group == "PKU")
+generate_right_swarms(aug_PKUs, color_1 = "darkorange", color_2 = "darkorange")
+```
+
+
+
+
+
+
+```{r fig.height=2, fig.width=7}
+b_subplot <- plot_split_violins(augmented_data, 4 , vars_by_quntl, 'none', F, 1, .1)
+b_subplot +  scale_shape_manual(values = c(0.001, 0.001))
 
 ```
 
