@@ -145,6 +145,7 @@ data_plus_labels[[6]] -> mask
 setwd("/DeepenData/Repos/geometric_cobra")
 
 write_csv(df[mask, ], "./results/dataframes/to_visualization_explanatory_subgraph_MASKED_GCN_FUX.csv")
+```
 
 
 ```{r fig.height=3.5, fig.width=10, message=FALSE, warning=FALSE}
