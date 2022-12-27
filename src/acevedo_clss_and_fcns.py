@@ -155,7 +155,7 @@ def cobra_to_networkx(model, undirected: bool = True):
   assert nx.is_connected(nx.Graph(SG))
 
   grafo_nx                     =copy.deepcopy(SG)
-  first_partition , second_partition,   = bipartite.sets(grafo_nx)
+  first_partition , second_partition   = bipartite.sets(grafo_nx)
   
   
   if first_partition.__len__() > second_partition.__len__():
