@@ -166,8 +166,15 @@ def cobra_to_networkx(model, undirected: bool = True):
       met_partition = first_partition
       
       
-  
+  ##
   assert set(rxn_partition).issubset(set(rxn_list)) and set(met_partition).issubset(set(met_list))
+  
+  feature_dict = dict(zip(met_partition, itertools.repeat(0)))
+  feature_dict.update(dict(zip(rxn_partition, itertools.repeat(1))))
+  features_to_set =  {key: {"bipartite": feature_dict[key]} for key in feature_dict}
+  nx.set_node_attributes(grafo_nx, features_to_set)
+  
+  
   if undirected:
       
       
