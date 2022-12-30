@@ -62,8 +62,8 @@ for ( i in 1:length(conjuntos)) {
         # lab = df_res$gene_symbol,
         # lab = "gene_symbol_sig",
         lab = df_res$gene_symbol_sig,
-        # selectLab = unique(conjuntos[[i]][ conjuntos[[i]] %in% df_res$gene_symbol_sig ]),
-        selectLab = c('TMEM176B','ADH1A'),
+        selectLab = unique(conjuntos[[i]][ conjuntos[[i]] %in% df_res$gene_symbol_sig ]),
+        # selectLab = c('TMEM176B','ADH1A'),
         labSize = 2.5,
         boxedLabels = TRUE,
         drawConnectors = TRUE,
@@ -79,53 +79,13 @@ for ( i in 1:length(conjuntos)) {
     ggsave( plot = plot, filename = paste0("volcano_", names( conjuntos )[[i]] ,".png") )
 }
 
-# ----
-# Diagramas VENN
-library("VennDiagram")
- 
-# ROBADO
-# Prepare a palette of 3 colors with R colorbrewer:
-library("RColorBrewer")
-colour_palette <- brewer.pal(3, "Pastel2")
-
-# Diagrama
-venn.diagram(
-        x = list(gs_C, gs_F, gs_CF),
-        category.names = c("Concentrations" , "Fluxes" , "Confluxtration"),
-        euler.d = TRUE, scaled = TRUE,
-
-        filename = 'venn_diagramm.png',
-        output=TRUE,
-        
-        # Output features
-        imagetype="png" ,
-        height = 480 , 
-        width = 480 , 
-        resolution = 300,
-        compression = "lzw",
-        
-        # Circles
-        lwd = 2,
-        lty = 'blank',
-        fill = colour_palette,
-        
-        # Numbers
-        cex = .6,
-        fontface = "bold",
-        fontfamily = "sans",
-        
-        # Set names
-        cat.cex = 0.6,
-        cat.fontface = "bold",
-        cat.default.pos = "outer",
-        cat.pos = c(-27, 27, 135),
-        cat.dist = c(0.055, 0.055, 0.085),
-        cat.fontfamily = "sans",
-        rotation = 1
-)
-
 # ----- 
 # Un diagrama mas informativo pero que no se puede guardar
 library(nVennR)
-nvenn <- plotVenn(conjuntos, nCycles = 2000)
-showSVG(nVennObj = nvenn, opacity = 0.1, borderWidth = 3)
+nvenn <- plotVenn(
+    conjuntos, 
+    nCycles = 2000, 
+    outFile = "nVenn.svg", 
+    systemShow = TRUE
+)
+# TODO: no se puede incorporar directamente como un ggPlot
