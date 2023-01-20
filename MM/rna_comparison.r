@@ -13,7 +13,9 @@ df <- read.delim2("human_reads.tsv", sep = "\t", row.names = 1)
 # Funcion que toma una lista de entrez y retorna un genesymbol
 gene_symbol <- df$gene_symbol %>% DataFrame
 rownames( gene_symbol ) <- df$entrez_id %>% as.character
-entrez_to_gene <- function ( lista ) { gene_symbol[ lista ,] }
+gene_symbol2 <- rownames( df ) %>% DataFrame
+rownames( gene_symbol2 ) <- df$entrez_id %>% as.character
+entrez_to_gene <- function ( lista ) { paste0( gene_symbol2[ lista ,], " - ", gene_symbol[ lista ,]) }
 
 # Conjuntos
 gs_C  <- read.csv2("entrez_IDs_C.csv")[,1]  %>% as.character %>% entrez_to_gene
@@ -35,7 +37,7 @@ FoldChnage_cutoff = 2.0
 df_res <- cbind( res, gene_symbol=df$gene_symbol ) %>% as.data.frame
 df_res <- cbind( df_res, gene_symbol_sig=ifelse( 
                 abs(df_res$log2FoldChange) > FoldChnage_cutoff, 
-                df_res$gene_symbol, "NoSignificativo"
+                paste0( rownames(df_res), " - ", df_res$gene_symbol), "NoSignificativo"
             )) %>% as.data.frame
 
 only_genes_changed <- function ( list_genes ) {
@@ -52,8 +54,8 @@ for ( i in 1:length(conjuntos)) {
         x = 'log2FoldChange',
         y = 'pvalue',
         # y = 'padj',
-        title = 'Cambio de expreson PAH-reestablecido → PAH-KO',
-        subtitle = paste0( names( conjuntos )[[i]], " - ", length( unique(conjuntos[[i]][ conjuntos[[i]] %in% df_res$gene_symbol_sig ]) ), " transcritos" ),
+        title = 'Expression changes PAH-restored → PAH-KO',
+        subtitle = paste0( names( conjuntos )[[i]], " - ", length( unique(conjuntos[[i]][ conjuntos[[i]] %in% df_res$gene_symbol_sig ]) ), " trancripts" ),
         pCutoff = pValue_cutoff,
         FCcutoff = FoldChnage_cutoff,
         pointSize = 0.4,
@@ -62,8 +64,10 @@ for ( i in 1:length(conjuntos)) {
         # lab = df_res$gene_symbol,
         # lab = "gene_symbol_sig",
         lab = df_res$gene_symbol_sig,
-        selectLab = unique(conjuntos[[i]][ conjuntos[[i]] %in% df_res$gene_symbol_sig ]),
+        # lab = rownames(df_res),
         # selectLab = c('TMEM176B','ADH1A'),
+        selectLab = unique(conjuntos[[i]][ conjuntos[[i]] %in% df_res$gene_symbol_sig ]),
+        # selectLab = conjuntos[[i]],
         labSize = 2.5,
         boxedLabels = TRUE,
         drawConnectors = TRUE,
