@@ -1,0 +1,173 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r fig.height=2, fig.width=5, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(magrittr)
+library(ggbeeswarm)
+library(ggpubr)
+library(palmerpenguins)
+library(magrittr)
+library(ggbeeswarm)
+library(ggpubr)
+setwd("/DeepenData/Repos/geometric_cobra")
+
+color_1 <- "darkorange"
+color_2 <- "dodgerblue2" 
+
+
+
+
+penguins %>% dplyr::select(c("species","body_mass_g","sex")) -> df
+  df%>%
+  drop_na()%>%
+  ggplot(aes(x=species,y=body_mass_g, color=sex)) +
+  geom_boxplot(width = .1, outlier.shape = 4) +
+  geom_point(position=position_quasirandom(dodge.width = .6, width = .09), alpha = 1/3, size =.7) #+
+  #scale_colour_manual(values = c(color_1 ,color_2))+
+  #                          theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+  #                                axis.title.y = element_blank(), legend.position='top',
+  #                               legend.text = element_text(size=10))+
+  #guides(color = guide_legend(override.aes = list(size = 2, alpha = 1) ))  + coord_trans( y="log2") 
+
+
+```
+
+```{r}
+library(magrittr)
+
+setwd("/DeepenData/Repos/geometric_cobra")
+
+metabolites_outliers_imputed           <- arrow::read_parquet("./metabolites_data/metabolites_outliers_imputed.parquet.gzip") %>% as_tibble()%>% mutate(Group = as.factor(Group))
+
+
+
+
+
+
+
+
+```
+
+
+```{r}
+color_1 <- "dodgerblue2" 
+
+color_2 <- "darkorange"
+
+
+legend.position = 'none'
+
+
+get_concentration_subplot <- function(input_df, vars_subset){
+  Control_df <-  input_df %>% dplyr::filter(Group == "Control")  %>%  dplyr::slice_sample(n=100)
+
+
+PKU_df <-  input_df %>% dplyr::filter(Group == "PKU") 
+
+subsample <- rbind(PKU_df, Control_df)
+subsample %>% dplyr::select(c(vars_subset, 'Group')) %>% pivot_longer(-Group) -> df
+
+df %>%                                 ggplot(aes(x= reorder(name, -value), y=value, color=Group)) + 
+                                 geom_boxplot(width = .1, outlier.shape = 4)    +
+  geom_point(position=position_quasirandom(dodge.width = .5, width = .05), alpha = 1/3, size =.7) +
+  scale_colour_manual(values = c(color_1 ,color_2))  + 
+   theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+                                  axis.title.y = element_blank(), legend.position=legend.position,
+                                 legend.text = element_text(size=10)) -> p
+return(p)
+  
+}
+
+
+  #guides(color = guide_legend(override.aes = list(size = 2, alpha = 1) ))
+
+vars_subset <- c("Gly", "Glu",  "Ala",  "Pro" )
+
+
+get_concentration_subplot(metabolites_outliers_imputed, vars_subset)
+
+
+
+```
+```{r}
+metabolites_outliers_imputed     %>% 
+                                 summarise(across(where(is.double),  ~ max(.x, na.rm = TRUE))) %>% 
+                                 t %>% as.data.frame() %>% arrange(desc(V1)) %>% rownames() -> sorted_vars
+
+
+
+
+setdiff(sorted_vars, c("Phe")) -> v
+
+
+hola      <- list()
+hola[[1]] <- v[1:3]
+hola[[2]] <- v[4:8]
+hola
+
+i = 1
+hola[i] <- v[i:i+3]
+
+
+
+#seq(from = 2, to = 9, by = 2)
+
+```
+
+
+
+```{r}
+metabolites_outliers_imputed  %>% ggplot(aes(x=Group,y=Phe, color=Group))       + 
+                                 geom_boxplot(width = .1, outlier.shape = 4) +
+                                 geom_point(position=position_quasirandom(dodge.width = .51, width = .09), alpha = 1/3, size =.7)
+
+```
+
+
+```{r}
+rownames(metabolites_outliers_imputed) <- NULL
+
+
+
+metabolites_outliers_imputed     %>% 
+                                 summarise(across(where(is.double),  ~ max(.x, na.rm = TRUE))) %>% 
+                                 t %>% as.data.frame() %>% arrange(desc(V1)) %>% rownames() -> sorted_vars
+
+
+metabolites_outliers_imputed[c(sorted_vars[[1]], 'Group')] %>% 
+                                                          ggplot(aes(x=Group,y=Phe, color=Group))       + 
+                                                          geom_boxplot(width = .1, outlier.shape = 4) + 
+                                                          #coord_trans( y="log2") +
+                                                          geom_point(position=position_quasirandom(dodge.width = 10, width = .09), alpha = 1/3, size =.7)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

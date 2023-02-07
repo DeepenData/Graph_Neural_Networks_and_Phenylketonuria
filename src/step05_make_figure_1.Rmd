@@ -30,9 +30,9 @@ get_vars_by_quntl <- function(df){
 }
 
 foo <- function(plot){
-                                                  p <- ggplot_build(plot)
+                             p <- ggplot_build(plot)
                              p$data[[1]] <-   p$data[[1]] %>%
-                               mutate(diff = abs(x-round(x)), x = case_when(group %% 2 == 0 ~ round(x) + diff,
+                             mutate(diff = abs(x-round(x)), x = case_when(group %% 2 == 0 ~ round(x) + diff,
                                                     TRUE ~ round(x) - diff)) %>%    select(-diff)
                              
                              
@@ -40,7 +40,8 @@ foo <- function(plot){
                                (ggplot_gtable(p))
                              )
                              
-                            }
+}
+
 plot_split_violins <- function(data, quntl_num,vars_by_quntl ,legend.position, logscale, alpha, size_marker, color_1, color_2){
                           colours <- c(alpha(c( color_1), alpha), alpha(c(color_2), 1))
                           #data %>% get_vars_by_quntl -> vars_by_quntl
