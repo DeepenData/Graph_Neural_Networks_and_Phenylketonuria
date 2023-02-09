@@ -14,7 +14,10 @@ library(magrittr)
 library(ggbeeswarm)
 library(ggpubr)
 setwd("/DeepenData/Repos/geometric_cobra")
+```
 
+
+```{r fig.height=2, fig.width=5, message=FALSE, warning=FALSE}
 color_1 <- "darkorange"
 color_2 <- "dodgerblue2" 
 
@@ -58,11 +61,7 @@ color_1 <- "dodgerblue2"
 
 color_2 <- "darkorange"
 
-
-legend.position = 'none'
-
-
-get_concentration_subplot <- function(input_df, vars_subset, logscale =F){
+get_concentration_subplot <- function(input_df, vars_subset, logscale =F, legend.position = 'none'){
   Control_df <-  input_df %>% dplyr::filter(Group == "Control")  %>%  dplyr::slice_sample(n=100)
 
 
@@ -72,7 +71,7 @@ subsample <- rbind(PKU_df, Control_df)
 subsample %>% dplyr::select(c(vars_subset, 'Group')) %>% pivot_longer(-Group) -> df
 
 df %>%                                 ggplot(aes(x= reorder(name, -value), y=value, color=Group)) + 
-                                 geom_boxplot(width = .15, outlier.shape = 4, dodge.width = 3)    +
+                                 geom_boxplot(width = .15, outlier.shape = 4)    +
   geom_point(position=position_quasirandom(dodge.width = .8, width = .09), alpha = 1/3, size =.7) +
   scale_colour_manual(values = c(color_1 ,color_2))  + 
    theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
@@ -84,10 +83,6 @@ return(p)
   
 }
 
-
-  #guides(color = guide_legend(override.aes = list(size = 2, alpha = 1) ))
-
-
 metabolites_outliers_imputed     %>% 
                                  summarise(across(where(is.double),  ~ max(.x, na.rm = TRUE))) %>% 
                                  t %>% as.data.frame() %>% arrange(desc(V1)) %>% rownames() -> sorted_vars
@@ -95,32 +90,54 @@ metabolites_outliers_imputed     %>%
 setdiff(sorted_vars, c("Phe")) -> v
 vars_intervals <- list()
 j = 0
-for (i in seq(from = 1, to = 44, by = 8)){
+for (i in seq(from = 1, to = 44, by = 11)){
                                           j = j +1
-                                          vars_intervals[[j]] <-v[i:(i+7)]
+                                          vars_intervals[[j]] <-v[i:(i+10)]
                                           if( (i+7) > 44 ){ vars_intervals[[j]] <-v[i:(44)]}
                                          }
 
 
-vars_intervals[[5]] <- c(vars_intervals[[5]], vars_intervals[[6]])
- vars_intervals[[6]] <- NULL
+#vars_intervals[[5]] <- c(vars_intervals[[5]], vars_intervals[[6]])
+# vars_intervals[[6]] <- NULL
 
  
-get_concentration_subplot(metabolites_outliers_imputed, 'Phe', T)
+get_concentration_subplot(metabolites_outliers_imputed, 'Phe', T, 'top') -> p
+p + geom_hline(yintercept=c(35, 120), linetype="dashed", 
+                color = "red", size=.51) -> Phe_subplot
 ```
 
 
-```{r fig.height=9, fig.width=4}
-subplot_B <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[1]])
-subplot_C <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[2]])
-subplot_D <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[3]])
-subplot_E <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[4]])
-subplot_F <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[5]])
+```{r fig.height=2, fig.width=7}
+subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[1]][1:3])
+subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[1]][4:8])
+subplot_3 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[1]][9:11])
+subplot_4 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[2]][1:3])
+subplot_5 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[2]][4:6]) )
 
-ggarrange(subplot_B, subplot_C, subplot_D, subplot_E, subplot_F, ncol = 1, heights = c(1,1,1,1.2,1.2))
+subplot_6 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[2]][7:9]) )
 
+subplot_7 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[3]][1:4]) )
+subplot_8 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[3]][5:8]) )
+
+subplot_9 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[3]][9:11]) )
+subplot_10 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[4]][1:4]) )
+
+subplot_11 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[4]][5:8]) )
+subplot_12 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[4]][9:11]) )
+
+
+ggarrange(, ,  nrow = 1)
+ggarrange(subplot_11, subplot_12,  nrow = 1)
 ```
 
+```{r}
+
+
+
+
+
+
+```
 
 
 
