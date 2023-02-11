@@ -178,15 +178,52 @@ umap_panel
 
 #FLUX
 
+
+
+
+
 ```{r}
 library(magrittr)
 library(tidyverse)
 
+check_in            <- function(a_row){return("out" %in% a_row) }
+find_out_occurences <- function(df){return(sapply(as.list(as.data.frame(t(df))), check_in) %>% as.vector())}
+outliers_to_str     <- function(a_col, first_qutl, second_qutl){
+                                  Q1 <- quantile(a_col, first_qutl, names = FALSE, na.rm =T)
+                                  Q3 <- quantile(a_col, second_qutl, names = FALSE, na.rm =T)
+                                  INTER <- Q3 - Q1
+                                  lower_bound <- Q1 - 1.5*INTER
+                                  upper_bound <- Q3 + 1.5*INTER
+                                  a_col[a_col < lower_bound | a_col > upper_bound] <- "out"
+                                  return(a_col)}
+
+
+remove_outliers_patients <- function(df, first_qutl, second_qutl){
+                                        df  %>% # dplyr::select(-c(Phe)) %>% 
+                                        mutate_all(outliers_to_str, first_qutl, second_qutl)  %>% 
+                                        find_out_occurences  -> out_ocurrences
+                                        return(df[!out_ocurrences,])}
+
+
+
 setwd("/DeepenData/Repos/geometric_cobra")
 
-flux_samples_CONTROL_10_000 <- arrow::read_parquet("./results/fluxes/flux_samples_CONTROL_10_000.parquet.gzip")
-flux_samples_PKU_10_000 <- arrow::read_parquet("./results/fluxes/flux_samples_PKU_10_000.parquet.gzip")
+flux_samples_CONTROL_10_000 <- arrow::read_parquet("./results/fluxes/flux_samples_CONTROL_10_000.parquet.gzip") %>% remove_outliers_patients(0.02, .98)
+flux_samples_PKU_10_000 <- arrow::read_parquet("./results/fluxes/flux_samples_PKU_10_000.parquet.gzip")%>% remove_outliers_patients(0.02, .98)
 
+setwd("/DeepenData/Repos/geometric_cobra")
+
+arrow::write_parquet(flux_samples_CONTROL_10_000, "./results/fluxes/flux_samples_CONTROL_cleaned.parquet.gzip" ,compression = "gzip")
+arrow::write_parquet(flux_samples_PKU_10_000, "./results/fluxes/flux_samples_PKU_cleaned.parquet.gzip",     compression = "gzip")
+```
+
+
+```{r}
+
+```
+
+
+```{r}
 assertthat::assert_that(flux_samples_CONTROL_10_000 %>% dplyr::select_if(is.character) %>% ncol  %>% setequal(0))
 
 
@@ -201,7 +238,7 @@ all_flux_samples                     <- rbind(flux_samples_PKU_10_000, flux_samp
 
 
 print(all_flux_samples %>% dim)
-all_flux_samples %>% sample_n(300) -> flux_subsample
+all_flux_samples %>% sample_n(1000) -> flux_subsample
 table(flux_subsample$Group)
 ```
 
@@ -220,11 +257,14 @@ ACYL <- c('FAOXC14C12m', 'FAOXC14C14OHm', 'FAOXC162C142m', 'LNLCCPT2', 'C181OHc'
 
 
 ```{r fig.height=2, fig.width=10}
-
+library(tidyverse)
+library(magrittr)
+library(ggbeeswarm)
+library(ggpubr)
 color_1 <- "dodgerblue2" 
 color_2 <- "darkorange"
   
-get_flux_plot <- function(flux_set, a, b, dodge.width, swarm_width, point_size, axis_title_size, size_ticks_size, angle, legend.position,  y_label = F){
+get_flux_plot <- function(flux_set, a, b, dodge.width, swarm_width, point_size, axis_title_size, size_ticks_size, angle, legend.position,  y_label = F, gray = F){
             flux_subsample %>% dplyr::select(c(flux_set, 'Group'))    %>% 
                                            summarise(across(where(is.double),  ~ max(.x, na.rm = TRUE))) %>% 
                                            t %>% as.data.frame() %>% arrange(desc(V1)) %>% rownames() -> sorted_vars
@@ -232,8 +272,9 @@ get_flux_plot <- function(flux_set, a, b, dodge.width, swarm_width, point_size, 
           flux_subsample %>% dplyr::select(c(v[a:b], 'Group')) %>% pivot_longer(-Group) -> df
           
           
-          df %>%                           ggplot(aes(x= reorder(name, -value), y=value, color=Group)) + theme_minimal() + 
-                                           geom_boxplot(width = .15, outlier.shape = NA) + #theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+          df %>%                           ggplot(aes(x= reorder(name, -value), y=value, color=Group)) -> P0
+          if(gray){P0 <- P0  + theme_gray() }else{ P0 <- P0  + theme_minimal()}#+ theme_minimal() + 
+                                           P0 + geom_boxplot(width = .15, outlier.shape = NA) + #theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
                                            geom_point(position=position_quasirandom(dodge.width = dodge.width, width = swarm_width), alpha = .8, size =point_size)+
                                            scale_colour_manual(values = c(color_1 ,color_2))+
             theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = angle, vjust = 1, hjust=1),axis.text = element_text(size = size_ticks_size),axis.title = element_text(size = axis_title_size),
@@ -247,11 +288,11 @@ get_flux_plot <- function(flux_set, a, b, dodge.width, swarm_width, point_size, 
 }
 
 
-flux_1 <- get_flux_plot(flux_set = THBP, a = 1,b = 4,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 9,size_ticks_size =5,angle =45,legend.position = "none", y_label = T) + ylab(("Flux"))
-flux_2 <-get_flux_plot(flux_set = THBP, a = 7,b = 11,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 1,size_ticks_size =5,angle =45,legend.position = "none", y_label = T)  + ylim(c(0,5))
-flux_4 <-get_flux_plot(flux_set = THBP, a = 17,b = 17,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 1,size_ticks_size =5,angle =45,legend.position = "none", y_label = T)  #+ coord_trans( y="log2")
+flux_1 <- get_flux_plot(flux_set = THBP, a = 1,b = 4,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 9,size_ticks_size =7,angle =45,legend.position = "none", y_label = T) + ylab(("Flux"))
+flux_2 <-get_flux_plot(flux_set = THBP, a = 7,b = 11,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 1,size_ticks_size =7,angle =45,legend.position = "none", y_label = T)  + ylim(c(0,5))
+flux_4 <-get_flux_plot(flux_set = THBP, a = 17,b = 17,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 1,size_ticks_size =7,angle =45,legend.position = "none", y_label = T)  #+ coord_trans( y="log2")
 ggarrange(flux_1, flux_2,  flux_4, nrow = 1, widths = c(1, 1.2,.3), labels = "h") -> THBP_fluxes
-
+THBP_fluxes
 ```
 
 ```{r fig.height=2, fig.width=10}
@@ -264,7 +305,7 @@ ggarrange(flux_1, nrow = 1, widths = c(1), labels = 'i') -> ACYLS_fluxes
 
 ```{r fig.height=5, fig.width=1.4}
 
-flux_1 <- get_flux_plot(flux_set = PHE, a = 1,b = 1,dodge.width = 1.7,swarm_width = .3,point_size  = 1,axis_title_size = 9,size_ticks_size =9,angle =45,legend.position = "none", y_label = T) + 
+flux_1 <- get_flux_plot(flux_set = PHE, a = 1,b = 1,dodge.width = 1.7,swarm_width = .3,point_size  = 1,axis_title_size = 9,size_ticks_size =9,angle =45,legend.position = "none", y_label = T, gray = T) + 
   xlab(("")) + ylab(("Flux")) + coord_trans( y="log2") + geom_hline(yintercept=c(4,20, 30), linetype="dashed", 
                 color = c("red", "black","black"), size=.51)#+ coord_flip() #
 
