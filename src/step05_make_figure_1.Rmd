@@ -17,12 +17,12 @@ metabolites_outliers_imputed$Group
 ```
 
 
-```{r fig.height=5, fig.width=1.6}
+```{r fig.height=5, fig.width=3.6}
 color_1 <- "dodgerblue2" 
 
 color_2 <- "darkorange"
 
-get_concentration_subplot <- function(input_df, vars_subset, logscale =F, legend.position = 'none', y_label = F, angle = 45, swarm_width = .15, dodge.width = 1, point_size = .9, size_ticks_size = 9, axis_title_size = 12){
+get_concentration_subplot <- function(input_df, vars_subset, logscale =F, legend.position = 'none', y_label = F, angle = 45, swarm_width = .15, dodge.width = 1, point_size = .9, size_ticks_size = 9, axis_title_size = 12, gray = F){
   Control_df <-  input_df %>% dplyr::filter(Group == "Control")  %>%  dplyr::slice_sample(n=200)
 
 
@@ -31,8 +31,14 @@ PKU_df <-  input_df %>% dplyr::filter(Group == "PKU")
 subsample <- rbind(PKU_df, Control_df)
 subsample %>% dplyr::select(c(vars_subset, 'Group')) %>% pivot_longer(-Group) -> df
 
-df %>%                                 ggplot(aes(x= reorder(name, -value), y=value, color=Group)) + theme_minimal() + 
-                                 geom_boxplot(width = .15, outlier.shape = NA)    +
+df %>%                                 ggplot(aes(x= reorder(name, -value), y=value, color=Group)) -> P0
+
+if(gray){P0 <- P0  + theme_gray() }else{ P0 <- P0  + theme_minimal()}
+                                 
+                                  
+                                  
+                                  
+                                P0 + geom_boxplot(width = .15, outlier.shape = NA)    +
   geom_point(position=position_quasirandom(dodge.width = dodge.width, width = swarm_width), alpha = .8, size =point_size) +
   scale_colour_manual(values = c(color_1 ,color_2))  + 
    theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = angle, vjust = 0, hjust=.5),axis.text = element_text(size = size_ticks_size),axis.title = element_text(size = axis_title_size),
@@ -64,7 +70,7 @@ for (i in seq(from = 1, to = 44, by = 11)){
 # vars_intervals[[6]] <- NULL
 
  
-get_concentration_subplot(metabolites_outliers_imputed, 'Phe', T, 'top',  y_label = T,  angle=0) -> p
+get_concentration_subplot(metabolites_outliers_imputed, 'Phe', T, 'top',  y_label = T,  angle=0, gray = T) -> p
 p + geom_hline(yintercept=c(35,120, 360), linetype="dashed", 
                 color = c("black","black","red"), size=.51)+ scale_y_continuous(breaks=c(35,120,360, 1000, 2300)) +
   theme(legend.title=element_blank()) -> Phe_
@@ -72,9 +78,9 @@ p + geom_hline(yintercept=c(35,120, 360), linetype="dashed",
 
 
 
-Phe_subplot <- ggarrange(Phe_, labels = 'a' )
+Phe_subplot <- ggarrange(Phe_ , labels = 'a' )
 
-
+Phe_subplot
 
 ```
 
