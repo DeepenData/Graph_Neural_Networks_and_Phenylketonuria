@@ -62,7 +62,7 @@ color_1 <- "dodgerblue2"
 color_2 <- "darkorange"
 
 get_concentration_subplot <- function(input_df, vars_subset, logscale =F, legend.position = 'none'){
-  Control_df <-  input_df %>% dplyr::filter(Group == "Control")  %>%  dplyr::slice_sample(n=100)
+  Control_df <-  input_df %>% dplyr::filter(Group == "Control")  %>%  dplyr::slice_sample(n=200)
 
 
 PKU_df <-  input_df %>% dplyr::filter(Group == "PKU") 
@@ -102,8 +102,11 @@ for (i in seq(from = 1, to = 44, by = 11)){
 
  
 get_concentration_subplot(metabolites_outliers_imputed, 'Phe', T, 'top') -> p
-p + geom_hline(yintercept=c(35, 120), linetype="dashed", 
-                color = "red", size=.51) -> Phe_subplot
+p + geom_hline(yintercept=c(35,120, 360), linetype="dashed", 
+                color = c("black","black","red"), size=.51) -> Phe_subplot
+
+
+Phe_subplot
 ```
 
 
