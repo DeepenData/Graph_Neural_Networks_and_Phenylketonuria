@@ -334,6 +334,11 @@ ggarrange(metabolites_concentration_panel, second_panel, ncol = 1) -> metabolome
 ```
 
 ```{r fig.height=2.2, fig.width=8.4}
+
+library(tidyverse)
+library(magrittr)
+library(ggbeeswarm)
+library(ggpubr)
 setwd("/DeepenData/Repos/geometric_cobra")
 
 #img <- png::readPNG("./results/graphs/for_visualizations/control_concentration.png")
@@ -346,14 +351,31 @@ PKU_fluxes.png         <- ggplot() + background_image( png::readPNG("./results/g
 
 
 
-ggarrange(control_concentration.png, PKU_concentration.png, control_fluxes.png, PKU_fluxes.png, nrow = 1, labels = c("k","","l","")) ->  graphs_panel
+annotate_figure(control_concentration.png, left = 'Metabolites', top = 'Control') -> control_concentration.png
+annotate_figure(PKU_concentration.png,  top = 'PKU') -> PKU_concentration.png
+
+
+
+ggarrange(control_concentration.png, PKU_concentration.png, nrow = 1, labels = c("k","")) -> left_graphs
+
+
+
+
+annotate_figure(control_fluxes.png, left = 'Flux', top = 'Control') -> control_fluxes.png
+annotate_figure(PKU_fluxes.png,  top = 'PKU') -> PKU_fluxes.png
+ggarrange(control_fluxes.png, PKU_fluxes.png, nrow = 1, labels = c("l","")) -> right_graphs
+
+ggarrange(left_graphs, right_graphs, nrow = 1) ->  graphs_panel
+graphs_panel
+#ggarrange(control_concentration.png, PKU_concentration.png, control_fluxes.png, PKU_fluxes.png, nrow = 1, labels = c("k","","l","")) ->  graphs_panel
+#graphs_panel
 ```
 
 
 ```{r fig.height=9.5, fig.width=8.4}
 
 
-ggarrange(metabolome_panel, graphs_panel, ncol = 1, heights = c(4,1.1))
+ggarrange(metabolome_panel, graphs_panel, ncol = 1, heights = c(4,1.1)) -> full_panel
 
 
 

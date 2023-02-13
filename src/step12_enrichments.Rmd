@@ -320,7 +320,7 @@ concentration_flux_panel
 ```{r fig.height=4, fig.width=13}
 annotate_figure(concentration_panel,
 
-             left = text_grob("              Reactions                            Transporters        ", color = "black", rot = 90,  size = 8),) -> concentration_panel_final
+             left = text_grob(" Transporters                                Reactions", color = "black", rot = 90,  size = 8),) -> concentration_panel_final
 
 
 
@@ -332,7 +332,7 @@ full_panel
 ```{r fig.height=5, fig.width=12}
 
 setwd("/DeepenData/Repos/geometric_cobra")
-ggsave("./results/figures/figure_4.png", full_panel, height = 4, width = 13, bg="white")
+ggsave("./results/figures/figure_4.png", full_panel, height = 4, width = 12, bg="white")
 
 ```
 
