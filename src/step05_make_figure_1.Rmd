@@ -328,14 +328,40 @@ ggarrange(PAH_subplot, flux_panel, nrow = 1, widths = c(1,3)) -> second_panel
 
 ```{r fig.height=9, fig.width=8.4}
 
-ggarrange(metabolites_concentration_panel, second_panel, ncol = 1)
+ggarrange(metabolites_concentration_panel, second_panel, ncol = 1) -> metabolome_panel
 
 
 ```
 
+```{r fig.height=2.2, fig.width=8.4}
+setwd("/DeepenData/Repos/geometric_cobra")
 
+#img <- png::readPNG("./results/graphs/for_visualizations/control_concentration.png")
+
+control_concentration.png <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/control_concentration_v2.png"))
+PKU_concentration.png     <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/PKU_concentration_v2.png"))
+
+control_fluxes.png     <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/control_fluxes_v2.png"))
+PKU_fluxes.png         <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/PKU_fluxes_v2.png"))
+
+
+
+ggarrange(control_concentration.png, PKU_concentration.png, control_fluxes.png, PKU_fluxes.png, nrow = 1, labels = c("i","","j","")) ->  graphs_panel
+```
+
+
+```{r fig.height=9.5, fig.width=8.4}
+
+
+ggarrange(metabolome_panel, graphs_panel, ncol = 1, heights = c(4,1.1))
+
+
+
+```
+
+####################################################################################################
 ################################--------END--------------###########################################
-##########################################################################
+####################################################################################################
 
 ```{r message=FALSE, warning=FALSE}
 #metabolite_data        <- read_csv("./metabolites_data/metabolite_data.csv")
@@ -489,6 +515,7 @@ ggarrange(umap_plot_1, umap_plot_2, labels = c("f","g"), vjust = 1.1, hjust = .2
 ggarrange(concentration_subplot, umap_panel, ncol = 1, heights = c(1,.25)) -> left_panel
 
 ```
+
 
 
 ############################################
