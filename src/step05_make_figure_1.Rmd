@@ -80,7 +80,7 @@ p + geom_hline(yintercept=c(35,120, 360), linetype="dashed",
 
 Phe_subplot <- ggarrange(Phe_ , labels = 'a' )
 
-Phe_subplot
+
 
 ```
 
@@ -140,10 +140,10 @@ subplot_f <- ggarrange(subplot_1, subplot_2,nrow = 1, widths = c(1.4,2), labels 
 
 
 
-```{r fig.height=5, fig.width=6}
+```{r fig.height=5, fig.width=9}
 metabolites_panel<- ggarrange(subplot_b, subplot_c, subplot_d, subplot_e, subplot_f, ncol = 1)
 
-metabolites_concentration_panel <- ggarrange(Phe_subplot, metabolites_panel, nrow = 1, widths = c(1,4))
+metabolites_concentration_panel <- ggarrange(Phe_subplot, metabolites_panel, nrow = 1, widths = c(1.2,4))
 metabolites_concentration_panel
 ```
 
@@ -291,7 +291,7 @@ get_flux_plot <- function(flux_set, a, b, dodge.width, swarm_width, point_size, 
 flux_1 <- get_flux_plot(flux_set = THBP, a = 1,b = 4,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 9,size_ticks_size =7,angle =45,legend.position = "none", y_label = T) + ylab(("Flux"))
 flux_2 <-get_flux_plot(flux_set = THBP, a = 7,b = 11,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 1,size_ticks_size =7,angle =45,legend.position = "none", y_label = T)  + ylim(c(0,5))
 flux_4 <-get_flux_plot(flux_set = THBP, a = 17,b = 17,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 1,size_ticks_size =7,angle =45,legend.position = "none", y_label = T)  #+ coord_trans( y="log2")
-ggarrange(flux_1, flux_2,  flux_4, nrow = 1, widths = c(1, 1.2,.3), labels = "h") -> THBP_fluxes
+ggarrange(flux_1, flux_2,  flux_4, nrow = 1, widths = c(1, 1.2,.3), labels = "i") -> THBP_fluxes
 THBP_fluxes
 ```
 
@@ -299,7 +299,7 @@ THBP_fluxes
 flux_1 <- get_flux_plot(flux_set = ACYL, a = 4,b = 12,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 9,size_ticks_size =5,angle =45,legend.position = "none", y_label = T) + ylab(("Flux"))
 #flux_2 <-get_flux_plot(flux_set = ACYL, a = 13,b = 20,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 1,size_ticks_size =5,angle =45,legend.position = "none", y_label = T)  + ylim(c(0,15))
 #flux_4 <-get_flux_plot(flux_set = ACYL, a = 13,b = 15,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 1,size_ticks_size =5,angle =45,legend.position = "none", y_label = T)  #+ coord_trans( y="log2")
-ggarrange(flux_1, nrow = 1, widths = c(1), labels = 'i') -> ACYLS_fluxes
+ggarrange(flux_1, nrow = 1, widths = c(1), labels = 'j') -> ACYLS_fluxes
 ```
 
 
@@ -310,7 +310,7 @@ flux_1 <- get_flux_plot(flux_set = PHE, a = 1,b = 1,dodge.width = 1.7,swarm_widt
                 color = c("red", "black","black"), size=.51)#+ coord_flip() #
 
 
-ggarrange(flux_1, nrow = 1, widths = c(1), labels = 'i') -> PAH_subplot
+ggarrange(flux_1, nrow = 1, widths = c(1), labels = 'h') -> PAH_subplot
 
 ```
 
@@ -322,7 +322,7 @@ ggarrange(umap_panel, THBP_fluxes, ACYLS_fluxes, ncol = 1) -> flux_panel
 
 
 
-ggarrange(PAH_subplot, flux_panel, nrow = 1, widths = c(1,3)) -> second_panel
+ggarrange(PAH_subplot, flux_panel, nrow = 1, widths = c(.9,3)) -> second_panel
 
 ```
 
@@ -346,7 +346,7 @@ PKU_fluxes.png         <- ggplot() + background_image( png::readPNG("./results/g
 
 
 
-ggarrange(control_concentration.png, PKU_concentration.png, control_fluxes.png, PKU_fluxes.png, nrow = 1, labels = c("i","","j","")) ->  graphs_panel
+ggarrange(control_concentration.png, PKU_concentration.png, control_fluxes.png, PKU_fluxes.png, nrow = 1, labels = c("k","","l","")) ->  graphs_panel
 ```
 
 
