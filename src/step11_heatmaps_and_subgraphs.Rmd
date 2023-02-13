@@ -114,7 +114,7 @@ make_heatmap <- function(processed_data, all_edge_scores, cutoff,labels_SAMPLE, 
 
 ```{r fig.height=1.5, fig.width=10, message=FALSE, warning=FALSE}
 get_heatmap_subplots <- function(df, labels, export_subgraph_csv, path, cutoff_narrow_heatmap){
-                                        data_plus_labels <- get_processed_data(df, 0.90,labels)
+                                        data_plus_labels <- get_processed_data(df, .80,labels)
                                       
                                       data_plus_labels[[1]] -> processed_data
                                       data_plus_labels[[2]] -> all_edge_scores
@@ -154,12 +154,12 @@ get_subgraph_subplot <- function(path){
                                       graph <- ggplot() + background_image(img)
                                       return(graph)}
 
-make_panel <- function(df, labels, if_export, subgraph_exporting_path, graph_subplot_image_path, cutoff_narrow_heatmap ){
+make_panel <- function(df, labels, if_export, subgraph_exporting_path, graph_subplot_image_path, cutoff_narrow_heatmap, subplot_labels ){
   
                       subplots_flux  <- get_heatmap_subplots(df, labels, if_export, subgraph_exporting_path, cutoff_narrow_heatmap)
                       subgraph_subplot <-get_subgraph_subplot(graph_subplot_image_path)
-                      ggarrange(subgraph_subplot, subplots_flux[[2]]  %>% ggplotify::as.ggplot(), widths = c(1,1)) -> lower_panel
-                      ggarrange(subplots_flux[[1]] %>% ggplotify::as.ggplot(), lower_panel, ncol = 1, heights = c(.5,1)) -> full_panel
+                      ggarrange(subgraph_subplot, subplots_flux[[2]]  %>% ggplotify::as.ggplot(), widths = c(1,1), labels = subplot_labels[[1]] , vjust = .9, hjust = .13) -> lower_panel
+                      ggarrange(subplots_flux[[1]] %>% ggplotify::as.ggplot(), lower_panel, ncol = 1, heights = c(.5,1), labels = subplot_labels[[2]] , vjust = .9, hjust = .13) -> full_panel
                       
                       return(list(full_panel,  subplots_flux[[2]], subplots_flux[[3]] ))
   
@@ -167,19 +167,43 @@ make_panel <- function(df, labels, if_export, subgraph_exporting_path, graph_sub
 }
 ```
 
-```{r fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE}
+```{r fig.height=4.5, fig.width=10, message=FALSE, warning=FALSE}
 setwd("/DeepenData/Repos/geometric_cobra")
 
-df_flux     <-  read_csv("./results/dataframes/to_R_heatmap_explanatory_subgraph_MASKED_GCN_Concentration.csv") %>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
-labels_flux <- read_csv("./results/dataframes/labels_masked_only_Concen.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
+df_conc     <-  read_csv("./results/dataframes/new_to_R_heatmap_explanatory_subgraph_MASKED_GIN_Concentration.csv") %>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
+labels_conc <- read_csv("./results/dataframes/labels_masked_only_Concen.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
 
-make_panel(df_flux, labels_flux, T, "./results/dataframes/to_visualization_explanatory_subgraph_MASKED_GCN_Concentration.csv",  "./results/figures/Figure_2_MASKED_Concentration.png", .99) -> upper_panel;
+make_panel(df_conc, labels_conc, F, "",  "./results/figures/Figure_2_MASKED_Concentration.png", .995, list(c('b', 'c'),c("a",""))) -> upper_panel;
+upper_panel[[1]]
 ```
 
 
-```{r fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE}
-upper_panel
+```{r fig.height=4.5, fig.width=10, message=FALSE, warning=FALSE}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+df_flux     <-  read_csv("./results/dataframes/new_to_R_heatmap_explanatory_subgraph_MASKED_GIN_Fluxes.csv") %>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
+labels_flux <- read_csv("./results/dataframes/labels_masked_only_Fluxes.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
+
+make_panel(df_flux, labels_flux, F, "",  "./results/figures/Figure_2_MASKED_FLUX.png", .95, list(c('e', 'f'),c("d",""))) -> middle_panel;
+middle_panel[[1]]
 ```
+
+
+
+```{r fig.height=4.5, fig.width=10, message=FALSE, warning=FALSE}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+df_flux     <-  read_csv("./results/dataframes/new_to_R_heatmap_explanatory_subgraph_MASKED_GIN_Concen_plus_Fluxes.csv") %>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
+labels_flux <- read_csv("./results/dataframes/labels_masked_Concen_plus_Fluxes.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
+
+make_panel(df_flux, labels_flux, F, "",  "./results/figures/Figure_2_MASKED_Concen_plus_Fluxes.png", .99, list(c('h', 'i'),c("g",""))) -> lower_panel;
+lower_panel[[1]]
+```
+
+
+
+
+
 ```{r fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE}
 
 get_clusters_and_check <- function(upper_panel, path){
@@ -206,12 +230,26 @@ get_clusters_and_check <- function(upper_panel, path){
 
 
 
+#upper_panel[[1]], middle_panel[[1]], lower_panel[[1]], 
 
 
 
+get_clusters_and_check(upper_panel, "./results/dataframes/new_to_visualization_explanatory_subgraph_MASKED_GIN_Concentration.csv") -> concentration 
+get_clusters_and_check(middle_panel, "./results/dataframes/new_to_visualization_explanatory_subgraph_MASKED_GIN_FLUX.csv") -> flux 
+get_clusters_and_check(lower_panel, "./results/dataframes/new_to_visualization_explanatory_subgraph_MASKED_GIN_Concen_plus_Fluxes.csv") -> concentration_plus_flux 
 
-get_clusters_and_check(upper_panel, "./results/dataframes/to_visualization_explanatory_subgraph_MASKED_GCN_Concentration.csv") -> concentration 
+
 ```
+
+
+```{r}
+setwd("/DeepenData/Repos/geometric_cobra")
+concentration           %>% dplyr::select(c(Cluster,genes)) %>% write_csv( "./results/dataframes/Cluster_genes_concentration.csv")
+flux                    %>% dplyr::select(c(Cluster,genes))  %>% write_csv( "./results/dataframes/Cluster_genes_flux.csv")
+concentration_plus_flux %>% dplyr::select(c(Cluster,genes))  %>% write_csv( "./results/dataframes/Cluster_genes_concentration_plus_flux.csv")
+
+```
+
 
 
 ```{r fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE}
@@ -249,14 +287,14 @@ concentration_plus_flux %>% dplyr::select(c(Cluster,genes))  %>% write_csv( "./r
 ```{r fig.height=15, fig.width=12, message=FALSE, warning=FALSE}
 
 ggarrange(upper_panel[[1]], middle_panel[[1]], lower_panel[[1]], ncol = 1) -> full_panel
-
+full_panel
 ```
 
 
 ```{r}
 
 setwd("/DeepenData/Repos/geometric_cobra")
-ggsave("./results/figures/figure_3.png", full_panel, height = 15, width = 12)
+ggsave("./results/figures/figure_3.png", full_panel, height = 13, width = 10)
 
 ```
 

@@ -105,32 +105,35 @@ transporters_and_reactions_concentration_plus_flux%>% unlist %>% as.vector() %>%
 
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 transporters_and_reactions_concentration$reactions %>% 
-  compareCluster(fun='enrichPathway', pvalueCutoff=1e-2, qvalueCutoff=1e-2)-> enrich_output
+  compareCluster(fun='enrichPathway', pvalueCutoff=1e-3, qvalueCutoff=1e-3)-> enrich_output
 enrich_output %>% dotplot(showCategory = 10, font.size = 5, label_format =90)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
     #legend.box = "vertical",
     text = element_text(size=6)) -> concentration_reactions_enrichPathway
+concentration_reactions_enrichPathway
 ```
 
 
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 transporters_and_reactions_concentration$transporters %>% 
-  compareCluster(fun='enrichPathway', pvalueCutoff=1e-5, qvalueCutoff=1e-5)-> enrich_output
+  compareCluster(fun='enrichPathway', pvalueCutoff=1e-6, qvalueCutoff=1e-5)-> enrich_output
 enrich_output %>% dotplot(showCategory = 10, font.size = 5, label_format =90)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
     #legend.box = "vertical",
     text = element_text(size=6)) -> concentration_transporters_enrichPathway
+
+concentration_transporters_enrichPathway
 ```
 
 
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 
 transporters_and_reactions_concentration$reactions %>% compareCluster(fun='enrichDGN', pvalueCutoff=5e-2,  qvalueCutoff=5e-2)-> enrich_output
-enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
+enrich_output %>% dotplot(showCategory = 10, font.size = 6, label_format =80)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -144,7 +147,7 @@ enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 
 transporters_and_reactions_concentration$transporters %>% compareCluster(fun='enrichDGN', pvalueCutoff=5e-2,  qvalueCutoff=5e-2)-> enrich_output
-enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
+enrich_output %>% dotplot(showCategory = 3, font.size = 6, label_format =80)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -154,8 +157,24 @@ enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
 
 
 
-```{r fig.height=2, fig.width=12}
-concentration_panel <- ggarrange(concentration_reactions_enrichPathway, concentration_transporters_enrichPathway, concentration_reactions_enrichDGN, concentration_transporters_enrichDGN, common.legend = T, labels = c("a", "b", "c", "d"), nrow = 1)
+```{r fig.height=4, fig.width=4}
+#concentration_panel <- ggarrange(concentration_reactions_enrichPathway, concentration_transporters_enrichPathway, concentration_reactions_enrichDGN, concentration_transporters_enrichDGN, common.legend = T, labels = c("a", "b", "c", "d"), nrow = 1)
+
+
+#annotate_figure (concentration_reactions_enrichPathway, left = text_grob("Reactions", color = "black", rot = 90,  size = 9),) ->concentration_reactions_enrichPathway
+#annotate_figure (concentration_transporters_enrichPathway, left = text_grob("Transporters", color = "black", rot = 90,  size = 9),)->concentration_transporters_enrichPathway
+
+
+
+concentration_panel <- ggarrange(concentration_reactions_enrichPathway, concentration_transporters_enrichPathway,common.legend = T, labels = c("a", "b"), nrow = 2)
+
+
+
+annotate_figure(concentration_panel,
+
+               top = text_grob("Metabolite abundance", color = "black", rot = 0,  size = 8),) -> concentration_panel
+
+concentration_panel
 ```
 
 ##########################################
@@ -165,32 +184,34 @@ concentration_panel <- ggarrange(concentration_reactions_enrichPathway, concentr
 
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 transporters_and_reactions_flux$reactions %>% 
-  compareCluster(fun='enrichPathway', pvalueCutoff=1e-3, qvalueCutoff=1e-3)-> enrich_output
+  compareCluster(fun='enrichPathway', pvalueCutoff=1e-11, qvalueCutoff=1e-11)-> enrich_output
 enrich_output %>% dotplot(showCategory = 10, font.size = 5, label_format =90)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
     #legend.box = "vertical",
     text = element_text(size=6)) -> flux_reactions_enrichPathway
+flux_reactions_enrichPathway
 ```
 
 
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 transporters_and_reactions_flux$transporters %>% 
-  compareCluster(fun='enrichPathway', pvalueCutoff=1e-5, qvalueCutoff=1e-5)-> enrich_output
+  compareCluster(fun='enrichPathway', pvalueCutoff=1e-15, qvalueCutoff=1e-15)-> enrich_output
 enrich_output %>% dotplot(showCategory = 10, font.size = 5, label_format =90)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
     #legend.box = "vertical",
     text = element_text(size=6))-> flux_transporters_enrichPathway
+flux_transporters_enrichPathway
 ```
 
 
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 
 transporters_and_reactions_flux$reactions %>% compareCluster(fun='enrichDGN', pvalueCutoff=5e-2,  qvalueCutoff=5e-2)-> enrich_output
-enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
+enrich_output %>% dotplot(showCategory = 3, font.size = 6, label_format =80)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -204,7 +225,7 @@ enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 
 transporters_and_reactions_flux$transporters %>% compareCluster(fun='enrichDGN', pvalueCutoff=5e-2,  qvalueCutoff=5e-2)-> enrich_output
-enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
+enrich_output %>% dotplot(showCategory = 3, font.size = 6, label_format =80)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -212,40 +233,55 @@ enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
     text = element_text(size=6)) -> flux_transporters_enrichDGN
 ```
 
-```{r fig.height=2, fig.width=12}
-flux_panel <- ggarrange(flux_reactions_enrichPathway, flux_transporters_enrichPathway, flux_reactions_enrichDGN, flux_transporters_enrichDGN, common.legend = T, labels = c("e", "f", "g", "h"), nrow = 1)
+```{r fig.height=4, fig.width=8}
+#flux_panel <- ggarrange(flux_reactions_enrichPathway, flux_transporters_enrichPathway, flux_reactions_enrichDGN, flux_transporters_enrichDGN, common.legend = T, labels = c("e", "f", "g", "h"), nrow = 1)
+
+
+flux_panel <- ggarrange(flux_reactions_enrichPathway, flux_transporters_enrichPathway, common.legend = T, labels = c("c", "d"), nrow = 2)
+
+annotate_figure(flux_panel,
+
+               top = text_grob("Flux", color = "black", rot = 0,  size = 8),) -> flux_panel
+
+flux_panel
+
+
+
+
 ```
 ##########################################
 ################---transporters_and_reactions_concentration_plus_flux---#########################
 ##########################################
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 transporters_and_reactions_concentration_plus_flux$reactions %>% 
-  compareCluster(fun='enrichPathway', pvalueCutoff=5e-2, qvalueCutoff=5e-2)-> enrich_output
+  compareCluster(fun='enrichPathway', pvalueCutoff=5e-5, qvalueCutoff=5e-5)-> enrich_output
 enrich_output %>% dotplot(showCategory = 10, font.size = 5, label_format =90)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
     #legend.box = "vertical",
     text = element_text(size=6)) ->concentration_plus_flux_reactions_enrichPathway
+concentration_plus_flux_reactions_enrichPathway
 ```
 
 
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 transporters_and_reactions_concentration_plus_flux$transporters %>% 
-  compareCluster(fun='enrichPathway', pvalueCutoff=1e-2, qvalueCutoff=1e-2)-> enrich_output
+  compareCluster(fun='enrichPathway', pvalueCutoff=1e-11, qvalueCutoff=1e-11)-> enrich_output
 enrich_output %>% dotplot(showCategory = 10, font.size = 5, label_format =90)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
     #legend.box = "vertical",
     text = element_text(size=6)) -> concentration_plus_flux_transporters_enrichPathway
+concentration_plus_flux_transporters_enrichPathway
 ```
 
 
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 
 transporters_and_reactions_concentration_plus_flux$reactions %>% compareCluster(fun='enrichDGN', pvalueCutoff=5e-2,  qvalueCutoff=5e-2)-> enrich_output
-enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
+enrich_output %>% dotplot(showCategory = 3, font.size = 6, label_format =80)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -254,12 +290,10 @@ enrich_output %>% dotplot(showCategory = 5, font.size = 6, label_format =80)+
 ```
 
 
-
-
 ```{r fig.height=2, fig.width=4, message=FALSE, warning=FALSE}
 
 transporters_and_reactions_concentration_plus_flux$transporters %>% compareCluster(fun='enrichDGN', pvalueCutoff=5e-2,  qvalueCutoff=5e-2)-> enrich_output
-enrich_output %>% dotplot(showCategory = 10, font.size = 6, label_format =80)+
+enrich_output %>% dotplot(showCategory = 3, font.size = 6, label_format =80)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -267,21 +301,38 @@ enrich_output %>% dotplot(showCategory = 10, font.size = 6, label_format =80)+
     text = element_text(size=6)) -> concentration_plus_flux_transporters_enrichDGN
 ```
 
-```{r fig.height=2, fig.width=12}
-concentration_flux_panel <- ggarrange(
-  concentration_plus_flux_reactions_enrichPathway, concentration_plus_flux_transporters_enrichPathway, concentration_plus_flux_reactions_enrichDGN, concentration_plus_flux_transporters_enrichDGN, common.legend = T, labels = c("i", "j", "k", "l"), nrow = 1)
+```{r fig.height=3, fig.width=3}
+#concentration_flux_panel <- ggarrange(concentration_plus_flux_reactions_enrichPathway, concentration_plus_flux_transporters_enrichPathway, concentration_plus_flux_reactions_enrichDGN, concentration_plus_flux_transporters_enrichDGN, common.legend = T, labels = c("i", "j", "k", "l"), nrow = 1)
+
+concentration_flux_panel <- ggarrange(concentration_plus_flux_reactions_enrichPathway, concentration_plus_flux_transporters_enrichPathway, common.legend = T, labels = c("e", "f"), nrow = 2)
+
+
+
+annotate_figure(concentration_flux_panel,
+
+               top = text_grob("Abundance and flux", color = "black", rot = 0,  size = 8),) -> concentration_flux_panel
+
+concentration_flux_panel
+
 ```
 
 
-```{r fig.height=7, fig.width=12}
-ggarrange(concentration_panel, flux_panel, concentration_flux_panel, nrow = 3) -> full_panel
+```{r fig.height=4, fig.width=13}
+annotate_figure(concentration_panel,
+
+             left = text_grob("              Reactions                            Transporters        ", color = "black", rot = 90,  size = 8),) -> concentration_panel_final
+
+
+
+ggarrange(concentration_panel_final, flux_panel, concentration_flux_panel, ncol = 3)  -> full_panel
+full_panel
 ```
 
 
-```{r fig.height=7, fig.width=12}
+```{r fig.height=5, fig.width=12}
 
 setwd("/DeepenData/Repos/geometric_cobra")
-ggsave("./results/figures/figure_4.png", full_panel, height = 7, width = 14, bg="white")
+ggsave("./results/figures/figure_4.png", full_panel, height = 4, width = 13, bg="white")
 
 ```
 

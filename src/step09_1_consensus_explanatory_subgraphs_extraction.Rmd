@@ -53,7 +53,7 @@ df_flux     <-    read_csv("./results/dataframes/new_to_R_heatmap_explanatory_su
 
 labels_flux <- read_csv("./results/dataframes/labels_masked_only_Fluxes.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
 
-data_plus_labels <- get_processed_data(df_flux, .99, labels_flux)
+data_plus_labels <- get_processed_data(df_flux, .95, labels_flux)
 
 data_plus_labels[[1]] -> processed_data
 data_plus_labels[[5]] -> edges_genes_SAMPLE
@@ -76,7 +76,7 @@ df_flux     <-    read_csv("./results/dataframes/new_to_R_heatmap_explanatory_su
 
 labels_flux <- read_csv("./results/dataframes/labels_masked_only_Concen.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
 
-data_plus_labels <- get_processed_data(df_flux, .99, labels_flux)
+data_plus_labels <- get_processed_data(df_flux, .995, labels_flux)
 
 data_plus_labels[[1]] -> processed_data
 data_plus_labels[[5]] -> edges_genes_SAMPLE
