@@ -1,0 +1,144 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(magrittr)
+library(ggbeeswarm)
+library(ggpubr)
+library(mixgb)
+library(readxl)
+```
+
+Extract healthy patients to make the "control group"
+```{r message=FALSE, warning=FALSE}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+df1              <-read_csv("./metabolite_raw_data/raw_data_to_extract_controls.csv") %>% dplyr::select(!starts_with('...'))
+vars_to_drop_NAs <- c("Fecha entrega informe","Fecha de nacimiento","Phe","Tyr", "Edad (días calculados)")
+
+
+
+df1 %>% drop_na(any_of(vars_to_drop_NAs))  %>%
+        filter( (0 < Tyr)) %>%
+        filter( (35 <= Phe) & (Phe <= 120))  %>%   
+        filter(`Edad (días calculados)` <= 31) %>% 
+        select(-c("FDIAG")) %>%
+        mutate(`Fecha entrega informe` = as.Date(`Fecha entrega informe`,"%d-%m-%Y"))  %>% 
+        mutate(`Fecha de nacimiento` = as.Date(`Fecha de nacimiento`,"%d-%m-%Y")) %>%
+        filter(`Fecha entrega informe` > '2009-01-01')-> healthy
+
+
+to_drop <- c( "RUT","Fecha entrega informe", "Fecha de nacimiento",    "estudio molecular",      "Ciudad",                 "Sexo" , 
+ "Edad (días calculados)", "FADIAG (mg por dL)",     "TIRDIAG mg_por_DL" ,     "razon_FADIAG_TIRDIAG" ,  "COMUNA",
+ "REGION"         ,        "TDIAG")
+
+healthy_numeric <- healthy %>% select(-c(to_drop)) %>% select_if(is_double)
+```
+
+
+Extract PKU patients to make the "PKU group"
+
+```{r message=FALSE, warning=FALSE}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+
+df1_pku <-  read_excel('./metabolite_raw_data/raw_data_to_extract_PKUs.xlsx') %>% dplyr::select(-c("...1"))
+
+df1_pku %>%  filter(edad_diagnostico_dias<=31)%>%
+        mutate(`Fecha.entrega.informe` = as.Date(`Fecha.entrega.informe`,"%d-%m-%Y"))%>%
+   mutate(`Fecha.Nacimiento` = as.Date(`Fecha.Nacimiento`,"%d-%m-%Y"))  %>%
+   filter(360 <= Phe)  %>%   
+  
+  filter(`Fecha.entrega.informe` > '2009-01-01')-> PKU
+  
+
+
+to_drop <- c("Paciente_PKU", "COMUNA", "REGION", "Condicion", "RUT", "Fecha.entrega.informe", "Fecha.Nacimiento", "estudio.molecular",
+             "Ciudad", "Sexo", "edad_diagnostico_dias", "FADIAG..mg.por.dL.",    "TIRDIAG.mg_por_dL","razon_FADIAG_TIRDIAG" ,"TDIAG")
+
+
+PKU_numeric <- PKU %>% select(-c(to_drop)) %>% select_if(is_double)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+check_in            <- function(a_row){return("out" %in% a_row) }
+find_out_occurences <- function(df){return(sapply(as.list(as.data.frame(t(df))), check_in) %>% as.vector())}
+outliers_to_str     <- function(a_col, first_qutl, second_qutl){
+                                  Q1 <- quantile(a_col, first_qutl, names = FALSE, na.rm =T)
+                                  Q3 <- quantile(a_col, second_qutl, names = FALSE, na.rm =T)
+                                  INTER <- Q3 - Q1
+                                  lower_bound <- Q1 - 1.5*INTER
+                                  upper_bound <- Q3 + 1.5*INTER
+                                  a_col[a_col < lower_bound | a_col > upper_bound] <- "out"
+                                  return(a_col)}
+
+
+remove_outliers_patients <- function(df, first_qutl, second_qutl){
+                                        df  %>%  dplyr::select(-c(Phe)) %>% mutate_all(outliers_to_str, first_qutl, second_qutl)  %>% 
+                                        find_out_occurences  -> out_ocurrences
+                                        return(df[!out_ocurrences,])}
+
+impute_data_with_mixgb <- function(df){
+                                      for_mixgb <- data_clean(df) 
+                                      names(for_mixgb) <- make.names(colnames(for_mixgb))
+                                      imputed.data <- mixgb(data = for_mixgb, m = 1, nthread = 20, pmm.k = 10, initial.num = 'median')
+                                      imputed_data <-imputed.data[[1]] %>% as.data.frame()
+                                      return(imputed_data)}
+
+
+
+```
+
+
+
+```{r fig.height=7, fig.width=5}
+remove_outliers_patients(healthy_numeric, .25, .75)         -> healthy_outliers_removed
+print(paste('remaining healthy patients: ', nrow(healthy_outliers_removed)))
+
+
+
+impute_data_with_mixgb(healthy_outliers_removed)  -> healthy_outliers_inputation_done
+#healthy_outliers_inputation_done %>% plot_swarm_panel(.01, .1)
+```
+
+
+
+```{r fig.height=9, fig.width=5}
+remove_outliers_patients(PKU_numeric, 0.1, .9)         -> PKU_outliers_removed
+print(paste('remaining PKUs: ', nrow(PKU_outliers_removed)))
+
+impute_data_with_mixgb(PKU_outliers_removed)  -> PKU_outliers_inputation_done
+#PKU_outliers_inputation_done %>% plot_swarm_panel(.5, .7)
+```
+
+```{r}
+healthy_outliers_inputation_done['Group'] = "Control"
+PKU_outliers_inputation_done['Group']      = "PKU"
+assertthat::assert_that(all(names(PKU_outliers_inputation_done) == names(healthy_outliers_inputation_done)))
+
+data <- rbind(PKU_outliers_inputation_done, healthy_outliers_inputation_done)
+```
+```{r}
+setwd("/DeepenData/Repos/geometric_cobra")
+
+arrow::write_parquet(data, "./processed_data/metabolites_outliers_removed_and_imputed.parquet.gzip" ,  compression = "gzip")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
