@@ -155,7 +155,7 @@ def cobra_to_networkx(model, undirected: bool = True):
   assert nx.is_connected(nx.Graph(SG))
 
   grafo_nx                     =copy.deepcopy(SG)
-  first_partition , second_partition,   = bipartite.sets(grafo_nx)
+  first_partition , second_partition  = bipartite.sets(grafo_nx)
   
   
   if first_partition.__len__() > second_partition.__len__():
@@ -185,7 +185,7 @@ def add_metabolite_concentration_features(grafo_nx_input,feature_data,feature_na
         inplace=True
     )
 
-    number_to_fill_in = int(1e-5)
+    number_to_fill_in = 1e-5#int(1)
 
     feature_data[
         [item for item in node_list if item not in feature_data.columns.tolist()]
@@ -207,7 +207,8 @@ def graph_data_check(nx_G, pyg_graph, target_node):
     producto_idx      = list(nx_G.nodes()).index(target_node)
     producto_features = nx_G.nodes()[target_node]['x']
 
-    if np.allclose(pyg_graph.x[producto_idx,:].numpy()[0:producto_features.__len__()], np.array(producto_features), 1e-7, 1e-10):
+    if np.allclose(pyg_graph.x[producto_idx,:].numpy()[0:producto_features.__len__()], 
+                   np.array(producto_features), 1e-7, 1e-10):
         return True
     else:
         False
@@ -222,7 +223,7 @@ def make_PYG_graph_from_grafo_nx(nx_G_in):
     
     x_attribute     = nx.get_node_attributes(nx_G, "x")
     longest_feature = max(len(v) for k,v in x_attribute.items())
-    assert pyg_graph.x.shape[1]  == pyg_graph.num_features == longest_feature # == 
+    assert pyg_graph.x.shape[1]  == pyg_graph.num_features == longest_feature # == flux_samples.shape[0]
     assert graph_data_check(nx_G, pyg_graph, target_node = 'phe_L_c')
     assert graph_data_check(nx_G, pyg_graph, target_node = 'r0399')
     assert not pyg_graph.is_directed()
@@ -236,7 +237,7 @@ def add_flux_features(nx_G_in,flux_samples, feature_data):
     nx_G = copy.deepcopy(nx_G_in)
 
     feature_length = len(nx_G.nodes(data=True)['r0399']['x']) 
-    flux_dict = flux_samples.sample(feature_length, replace=False).to_dict(orient = 'list')
+    flux_dict = flux_samples.sample(feature_length, replace=True).to_dict(orient = 'list')
 
     x_attribute     = nx.get_node_attributes(nx_G, "x")
     x_attribute.update(flux_dict)
@@ -311,171 +312,6 @@ class GIN_classifier(torch.nn.Module):
         x     = x.reshape(batch_size, 2)
         return   torch.nn.functional.log_softmax(x, dim=1).squeeze()
     
-    
-    
-def Adcanced_train_one_epoch(modelo: GIN_classifier,
-                    optimizer, 
-                    train_loader: torch_geometric.loader.dataloader.DataLoader,
-                    loss_fun: torch.nn.modules.loss,
-                    scaler:torch.cuda.amp.grad_scaler.GradScaler,
-                    swa_start:int,
-                    swa_model,swa_scheduler,scheduler, 
-                    n_batches_report:int, device:str='cpu' ):
-    running_loss = 0.
-    last_loss = 0.
-    for i, data in enumerate(train_loader):
-        assert not data.is_cuda   
-        if (device == 'cuda:0') | (device == 'cuda'):                            
-            data.to(device, non_blocking=True) 
-            assert data.is_cuda
-        
-                
-        optimizer.zero_grad(set_to_none=True) # Zero your gradients for every batch
-        
-        if (device == 'cuda:0') | (device == 'cuda'):
-            with torch.cuda.amp.autocast():      
-                predictions = modelo(data)# Make predictions for this batch
-                loss        = loss_fun(predictions, data.y.long())
-            scaler.scale(loss).backward()
-
-            if (i+1) % 2 == 0:  
-                if i > swa_start:
-                    swa_model.update_parameters(modelo)
-                    swa_scheduler.step()
-                else:
-                    scheduler.step()
-            
-            #check_seen_y.extend(data.y.squeeze().tolist())
-            #loss.backward()  # Derive gradients.
-                scaler.step(optimizer)
-                scaler.update()
-            #optimizer.step()  # Update parameters based on gradients.
-                running_loss += loss.item()
-                 
-            
-        else:
-            with torch.cuda.amp.autocast():
-                predictions = modelo(data)# Make predictions for this batch
-                loss        = loss_fun(predictions, data.y.long())
-            loss.backward()
-            if (i+1) % 2 == 0:  
-                if i > swa_start:
-                    swa_model.update_parameters(modelo)
-                    swa_scheduler.step()
-                else:
-                    scheduler.step()
-                optimizer.step()
-                running_loss += loss.item()   
-            
-        
-    
-
-            
-        #It reports on the loss for every 100 batches.
-        if i % n_batches_report == 99:
-            last_loss = running_loss / n_batches_report
-            running_loss = 0.
-    torch.optim.swa_utils.update_bn(train_loader, swa_model, device=device)
-    return last_loss
-
-def validate(modelo: GIN_classifier, loader: DataLoader, device: str = 'cpu'):
-    modelo.eval()
-    correct = 0
-    for i, val_data in enumerate(loader):
-        
-        assert not val_data.is_cuda
-        if (device == 'cuda:0') | (device == 'cuda'):
-            val_data.to(device, non_blocking=True) 
-            assert val_data.is_cuda                          
-
-        val_predictions = modelo(val_data)# Make predictions for this batch
-        pred            = val_predictions.argmax(dim=1)
-
-        correct += int((pred == val_data.y).sum())
-        
-
-    return correct / len(loader.dataset)   
-
-def train_one_epoch(modelo: GIN_classifier,
-                    optimizer, 
-                    train_loader: torch_geometric.loader.dataloader.DataLoader,
-                    loss_fun: torch.nn.modules.loss,
-                    device:str='cpu' ):
-
-    correct = 0
-    for i, data in enumerate(train_loader):
-        assert not data.is_cuda   
-        if (device == 'cuda:0') | (device == 'cuda'):                            
-            data.to(device, non_blocking=True) 
-            assert data.is_cuda       
-                
-        optimizer.zero_grad(set_to_none=True) # Zero your gradients for every batch        
-        if (device == 'cuda:0') | (device == 'cuda'):
-            #with torch.cuda.amp.autocast():      
-            predictions = modelo(data)# Make predictions for this batch
-            loss        = loss_fun(predictions, data.y)
-            loss.backward()  # Derive gradients.
-            optimizer.step()  # Update parameters based on gradients.        
-            pred     = predictions.argmax(dim=1)  # Use the class with highest probability.
-            correct += int((pred == data.y).sum())  # Check against ground-truth labels.
-
-    return correct / len(train_loader.dataset)
-
-def train_and_validate(modelo,loss_fun,optimizer, EPOCHS ,train_loader,validation_loader, 
-                       validation_cycle:int = 4,
-                       save_state_dict:bool = False,save_entire_model:bool = False,verbose:bool= False,
-                       device:str='cpu', n_batches_report:int = 50, saving_path: str = '', tunning_mode:bool=False):
-    
-    modelo.to(device, non_blocking=True)
-    scaler        = torch.cuda.amp.GradScaler()
-    timestamp     = datetime.now().strftime('%d-%m-%Y_%Hh_%Mmin')    
-    swa_model     = torch.optim.swa_utils.AveragedModel(modelo).to(device, non_blocking=True)    
-    scheduler     = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=300)
-    swa_start     = 25
-    swa_scheduler = SWALR(optimizer, swa_lr=0.05)
-    epoch_number  = 0
-    best_vloss    = 1e-10
-    state_dict_path = None
-    model_path      = None
-    for epoch in tqdm.tqdm(range(EPOCHS)):
-
-        modelo.train(True)
-        avg_loss  = Adcanced_train_one_epoch(modelo, optimizer,train_loader, loss_fun, scaler, swa_start, swa_model, swa_scheduler, scheduler,
-                                    n_batches_report = n_batches_report, device=device) 
-        if epoch % validation_cycle == 0:
-            avg_vloss = validate(modelo, loss_fun, validation_loader, device=device )                
-        
-        
-        if avg_vloss > best_vloss:
-            best_vloss            = avg_vloss
-            best_val_state_dict   = copy.deepcopy(modelo.state_dict())
-            best_val_model        = copy.deepcopy(modelo)
-            if verbose:
-                print(f"new best_val_model {best_vloss = }")
-            
-            
-            if save_state_dict:
-                state_dict_path = saving_path+'/state_dicts/State_Dict_{}_{}_best_vloss_{}_epoch_{}'.format(
-                                                                modelo.__class__.__name__,timestamp, best_vloss, epoch_number)
-                torch.save(modelo.state_dict(), state_dict_path)
-                if verbose:
-                    print(f"best state_dict saved as {state_dict_path}")
-                    
-            if save_entire_model:
-                model_path = saving_path+'/models/Model_{}_{}_best_vloss_{}_epoch_{}.pt'.format(
-                                                                modelo.__class__.__name__,timestamp, best_vloss, epoch_number)
-                torch.save(best_val_model, model_path)
-                if verbose:
-                    print(f"best model saved as {model_path}")
-                
-                    
-        epoch_number += 1
-    #last_best_state_dict = copy.deepcopy(state_dict_path)
-    if tunning_mode:
-        return best_vloss
-        
-    return best_val_model, state_dict_path, model_path
-    
 from sklearn.model_selection import train_test_split
 
     
@@ -487,39 +323,6 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.nn import GIN
 from torch_geometric.nn import global_mean_pool
 import torch
-
-class GCN(torch.nn.Module):
-    def __init__(self, hidden_channels):
-        super(GCN, self).__init__()
-        torch.manual_seed(12345)
-        
-        self.GIN_layers =  GIN(in_channels= 1, hidden_channels= hidden_channels, num_layers= 4, 
-                               out_channels= hidden_channels, dropout=0.1,  jk=None, 
-                               act='LeakyReLU', act_first = True)   
-        
-        #self.conv1 = GCNConv(1, hidden_channels)
-        #self.conv2 = GCNConv(hidden_channels, hidden_channels)
-        #self.conv3 = GCNConv(hidden_channels, hidden_channels)
-        self.lin = Linear(hidden_channels, 2, bias=True)
-
-    def forward(self, x, edge_index, batch):
-        # 1. Obtain node embeddings 
-        #x = self.conv1(x, edge_index)
-        #x = x.relu()
-        x = self.GIN_layers(x, edge_index)
-        #x = F.dropout(x, p=0.1)
-        x = x.relu()
-        #x = self.conv3(x, edge_index)
-
-        # 2. Readout layer
-        x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
-
-        # 3. Apply a final classifier
-        
-        x = self.lin(x)
-        
-        return F.log_softmax(x, dim=1) #x
-
 class batch_loader():
     
     def __init__(self, graphs: list, batch_size: int  =1*32, num_samples:int = None, validation_percent:float = .3):
@@ -527,7 +330,10 @@ class batch_loader():
         self.batch_size = batch_size
         self.num_samples = num_samples
         self.validation_percent = validation_percent
-        self.train_idxs, self.val_idxs = train_test_split(range(len(self.graphs)), test_size = self.validation_percent)     
+        
+        self.train_idxs, self.sub_idxs = train_test_split(range(len(self.graphs)), test_size = self.validation_percent)
+        self.val_idxs,   self.test_idxs = train_test_split(self.sub_idxs, test_size = self.validation_percent)     
+
         
     def get_train_loader(self):
         train_subset = [self.graphs[i] for i in self.train_idxs]
@@ -540,6 +346,15 @@ class batch_loader():
     
     def get_validation_loader(self):
         validation_subset = [self.graphs[i] for i in self.val_idxs]
+        sampler      = RandomSampler(
+        validation_subset,
+        #num_samples= self.num_samples, 
+        replacement=False)   
+        
+        return  DataLoader(validation_subset, batch_size= self.batch_size, sampler = sampler,  drop_last=True)
+    
+    def get_test_loader(self):
+        validation_subset = [self.graphs[i] for i in self.test_idxs]
         sampler      = RandomSampler(
         validation_subset,
         #num_samples= self.num_samples, 
@@ -624,3 +439,257 @@ class GIN_classifier_to_explain_v2(torch.nn.Module):
         x     = self.FC2(self.leakyrelu(x))    
 
         return torch.nn.functional.log_softmax(x, dim=1)
+    
+from torch_geometric.nn.models import GIN
+from torch_geometric.nn.models import GAT
+from torch_geometric.nn.models import GCN
+
+class my_GNN(torch.nn.Module):
+    
+    def __init__(
+        self, 
+        model:str ,
+        n_classes: int,
+        n_nodes : int, 
+        num_features : int, 
+        out_channels: int = 8,
+        dropout : float = 0.05, 
+        hidden_dim : int = 8, 
+        LeakyReLU_slope : float = 0.01,
+        num_layers: int = 1,
+        
+        
+    ):
+        super(my_GNN, self).__init__() # TODO: why SUPER gato? 
+        self.n_nodes = n_nodes
+        self.n_classes = n_classes
+        self.dropout = dropout
+        self.num_features = num_features
+        self.out_channels = out_channels
+        self.model        = model
+        
+        if self.model == "GCN":    
+            self.GNN_layers =  GCN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+                                out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False) 
+    
+        elif self.model == "GAT":        
+             self.GNN_layers =  GAT(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+                                    out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False) 
+
+        elif self.model == "GIN":
+             self.GNN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+                                    out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False)
+        
+        #self.GIN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
+        #                       out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False)              
+        self.FC1          = Linear(in_features=out_channels, out_features=1, bias=True)
+        self.FC2          = Linear(in_features= self.n_nodes, out_features=self.n_classes, bias=True)
+        #self.FC          = Linear(in_features=out_channels, out_features=1, bias=True)           
+           
+        self.leakyrelu  = LeakyReLU(LeakyReLU_slope)#.to('cuda')
+    def forward(self, x, edge_index, batch):
+        batch_size = batch.unique().__len__()
+
+        x     = self.GNN_layers(x, edge_index)
+        x     = x.reshape(batch_size, self.n_nodes, self.out_channels)
+        x     = self.FC1(self.leakyrelu(x))
+        x     = x.reshape(batch_size,  self.n_nodes)       
+        x     = self.FC2(self.leakyrelu(x))    
+
+        return torch.nn.functional.log_softmax(x, dim=1)
+    
+    
+def train_one_epoch(modelo: GIN_classifier_to_explain_v2,
+                    optimizer, 
+                    train_loader: torch_geometric.loader.dataloader.DataLoader,
+                    loss_fun: torch.nn.modules.loss,
+                    device:str='cpu' ):
+
+    correct = 0
+    for i, data in enumerate(train_loader):
+        assert not data.is_cuda   
+        if (device == 'cuda:0') | (device == 'cuda'):                            
+            data.to(device, non_blocking=True) 
+            assert data.is_cuda       
+                
+        optimizer.zero_grad(set_to_none=True) # Zero your gradients for every batch        
+        if (device == 'cuda:0') | (device == 'cuda'):
+            #with torch.cuda.amp.autocast():      
+            predictions = modelo(data.x, data.edge_index,  data.batch)# Make predictions for this batch
+            loss        = loss_fun(predictions, data.y)
+            loss.backward()  # Derive gradients.
+            optimizer.step()  # Update parameters based on gradients.        
+            pred     = predictions.argmax(dim=1)  # Use the class with highest probability.
+            correct += int((pred == data.y).sum())  # Check against ground-truth labels.
+
+    return correct / len(train_loader.dataset)
+
+def validate(modelo: GIN_classifier_to_explain_v2, loader: DataLoader, device: str = 'cpu'):
+    modelo.eval()
+    correct = 0
+    for i, val_data in enumerate(loader):
+        
+        assert not val_data.is_cuda
+        if (device == 'cuda:0') | (device == 'cuda'):
+            val_data.to(device, non_blocking=True) 
+            assert val_data.is_cuda                          
+
+        val_predictions = modelo(val_data.x, val_data.edge_index,  val_data.batch)# Make predictions for this batch
+        pred            = val_predictions.argmax(dim=1)
+
+        correct += int((pred == val_data.y).sum())
+        
+
+    return correct / len(loader.dataset)   
+
+
+import os
+
+def train_and_validate(gnn_type, mask, flux, concentration, loader_path , EPOCHS, save, verbose, saving_folder, device:str="cuda"):
+    
+    
+    if mask and flux and not concentration:
+        assert "MASKED_loader_only_Fluxes.pt" == os.path.basename(loader_path)
+        
+    elif mask and not flux and concentration:
+        assert "MASKED_loader_only_Concen.pt" == os.path.basename(loader_path)
+
+    elif mask and  flux and concentration:
+        assert "MASKED_loader_Concen_plus_Fluxes.pt" == os.path.basename(loader_path)  
+    
+    loader = torch.load(loader_path)
+
+    a_batch         = next(iter(loader.get_train_loader()))
+    a_graph         = a_batch[0]
+    
+    model           = my_GNN( model=gnn_type,
+                                            n_nodes = a_graph.num_nodes, 
+                                            num_features = a_graph.num_node_features, 
+                                            n_classes = a_graph.num_classes,
+                                            hidden_dim=8,
+                                            num_layers=1).to(device, non_blocking=True).to(device)
+    
+    
+    optimizer       = torch.optim.Adam(model.parameters())
+    loss_function   = torch.nn.NLLLoss()
+    gc.collect()
+    torch.cuda.empty_cache() 
+    model_type = model.GNN_layers.__class__.__name__
+
+
+    
+    all_train_accuracy_Unmasked = []
+    all_validation_accuracy_Unmasked = []
+    best_validation_accuracy = 1e-10
+    for epoch in tqdm.tqdm(range(EPOCHS)):
+        
+        train_accuracy = train_one_epoch(model,
+                            optimizer=optimizer, 
+                            train_loader=loader.get_train_loader(),
+                            loss_fun=loss_function,
+                            device = device)
+
+        validation_accuracy = validate(model, loader.get_validation_loader(), device)
+        
+        all_train_accuracy_Unmasked.extend([train_accuracy])
+        all_validation_accuracy_Unmasked.extend([validation_accuracy])
+        
+        
+        if validation_accuracy > best_validation_accuracy:
+            best_validation_accuracy = validation_accuracy
+            del validation_accuracy
+            best_val_state_dict   = copy.deepcopy(model.state_dict())
+            best_val_model        = copy.deepcopy(model)
+            
+            if verbose:
+                timestamp     = datetime.now().strftime('%d-%m-%Y_%Hh_%Mmin')              
+                print(f'{model_type = } {flux = } {mask = } Epoch: {epoch:03d}, train_accuracy: {train_accuracy:.4f}, best_validation_accuracy: {best_validation_accuracy:.4f}')
+                
+                if save:
+                    #path = f"{saving_folder}Flux/" if flux else f"{saving_folder}Non_flux/"
+                    #path = f"{path}Masked/{model_type}" if mask else f"{path}Non_masked/{model_type}" 
+                    path = f"{saving_folder}Masked/{model_type}" if mask else f"{saving_folder}Non_masked/{model_type}" 
+
+                    
+                    if "MASKED_loader_only_Fluxes.pt" == os.path.basename(loader_path):
+                        path = f"{path}/Fluxes"
+                        
+                    elif "MASKED_loader_only_Concen.pt" == os.path.basename(loader_path):
+                        path = f"{path}/Concentration"
+                        
+                    elif "MASKED_loader_Concen_plus_Fluxes.pt" == os.path.basename(loader_path):
+                        path = f"{path}/Concen_plus_Fluxes"
+                    
+                    
+                               
+                    model_path = path +'/Model_{}_{}_best_ValAcc_{}_epoch_{}.pt'.format(model_type,timestamp, best_validation_accuracy, epoch)
+                    torch.save(best_val_model, model_path)
+                    print(f"saved as {model_path}")
+                    
+    return best_val_model, all_train_accuracy_Unmasked, all_validation_accuracy_Unmasked
+
+
+from sklearn.metrics import roc_curve, auc
+
+
+
+def get_ROC_parameters(model, test_loader, device:str="cuda"):
+
+    tprs            = []
+    aucs = []
+    base_fpr = np.linspace(0, 1, 101)
+    for i, test_data in enumerate(test_loader):
+            
+        assert not test_data.is_cuda
+        if (device == 'cuda:0') | (device == 'cuda'):
+            test_data.to(device, non_blocking=True) 
+            assert test_data.is_cuda                          
+
+        test_predictions = model(test_data.x, test_data.edge_index,  test_data.batch)# Make predictions for this batch
+        pred            = test_predictions.argmax(dim=1)
+        y_batch         = test_data.y
+        
+        y_pred_tag = pred.squeeze().cpu().int().tolist()
+        y_true     = y_batch.squeeze().cpu().int().tolist()
+        fpr, tpr, _ = roc_curve(y_true, y_pred_tag)
+        roc_auc = auc(fpr, tpr)
+        aucs.append(roc_auc)
+        tpr = np.interp(base_fpr, fpr, tpr)
+        tpr[0] = 0.0
+        tprs.append(tpr)
+
+
+    tprs = np.array(tprs)
+    mean_tprs = tprs.mean(axis=0)
+    mean_auc = auc(base_fpr, mean_tprs)
+    std_auc = np.std(aucs)
+
+
+    tprs_upper = np.minimum(mean_tprs + tprs.std(axis=0), 1)
+    tprs_lower = mean_tprs - tprs.std(axis=0)
+    
+    return base_fpr, mean_tprs, tprs_lower, tprs_upper, mean_auc, std_auc
+
+def put_ROC_in_subplot(base_fpr, mean_tprs, tprs_lower,
+                   tprs_upper, mean_auc, std_auc, AX, xlabel:str='', letter:str=''):
+    
+    AX.plot(base_fpr, mean_tprs, 'b', alpha = 0.8, label=r'Test set ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),)
+    AX.fill_between(base_fpr, tprs_lower, tprs_upper, color = 'blue', alpha = 0.2)
+    AX.plot([0, 1], [0, 1], linestyle = '--', lw = 2, color = 'r', label = 'Random', alpha= 0.8)
+
+    #ax1.plot(fpr, tpr, lw=1, alpha=0.6, label='ROC fold %d (AUC = %0.2f)' % (i, roc_auc), c = colors[i])
+
+    AX.legend(loc="lower right", fontsize=7.5)
+    AX.set_ylabel('True Positive Rate')
+    AX.set_xlabel(xlabel)
+    AX.set_title(letter, fontsize = 12,  fontweight ="bold", loc='left')
+    
+    
+def put_Learning_curve(all_train_accuracy, all_validation_accuracy, AX, letter):
+    AX.plot(all_train_accuracy,  label = "Train set", linestyle="--")
+    AX.plot(all_validation_accuracy,  label = "Validation set", linestyle="-")
+    AX.legend(loc="lower right", fontsize=11)
+    AX.set_ylabel('Accuracy (%)')
+    AX.set_xlabel("Epochs")
+    AX.set_ylim(0.4, 1.1)
+    AX.set_title(letter, fontsize = 12,  fontweight ="bold", loc='left')
