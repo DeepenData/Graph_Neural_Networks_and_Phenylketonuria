@@ -1,0 +1,151 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+#Check volcano plot
+
+```{r message=FALSE, warning=FALSE}
+library(arrow)
+library(tidyverse)
+library(scales)
+library(ggpubr)
+library(ggplot2)
+library(DOSE)
+library(magrittr)
+library(biomaRt)
+library(tidyverse)
+library(clusterProfiler)
+library(ReactomePA)
+library(org.Hs.eg.db)
+Hs.ensembl <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
+Mm.ensembl <- useMart("ensembl",dataset="mmusculus_gene_ensembl")
+```
+
+
+```{r message=FALSE, warning=FALSE}
+searchAttributes(mart = Mm.ensembl, pattern = "hsa")
+searchAttributes(mart = Mm.ensembl, pattern = "transc")
+```
+
+
+```{r message=FALSE, warning=FALSE}
+setwd("/DeepenData/Repos/geometric_cobra/deprecated")
+res <- readRDS("./MM/RNA_results.RDS")
+res %>% rownames() -> all_ENSMUST
+```
+```{r}
+c('ENSMUST00000228829','ENSMUST00000228611','ENSMUST00000096990') -> transcripts
+
+
+temp_1 <- getBM(attributes=c('ensembl_transcript_id','hsapiens_homolog_ensembl_gene'),filters ='ensembl_transcript_id',values =all_ENSMUST, mart = Mm.ensembl)
+
+
+colnames(temp_1)<-c("mouse_ensembl_transcript_id", "hsapiens_ensembl")
+
+
+
+```
+
+
+```{r}
+
+
+
+#searchAttributes(mart = Hs.ensembl, pattern = "entrez")
+
+temp_2 <- getBM(attributes=c('ensembl_gene_id','hgnc_symbol','entrezgene_id'), 
+                filters ='ensembl_gene_id',values = temp_1$hsapiens_ensembl, mart = Hs.ensembl)
+
+
+colnames(temp_2) <- c("hsapiens_ensembl", "hgnc_symbol", "entrezgene_id")
+
+```
+```{r}
+inner_join(temp_1, temp_2) -> all_gene_codes
+```
+```{r}
+res['mouse_ensembl_transcript_id'] <- rownames(res)
+
+
+inner_join(as.data.frame(res) ,all_gene_codes ) %>% drop_na() %>% arrange(hgnc_symbol) -> annotated_results
+```
+
+```{r}
+setwd("/DeepenData/Repos/geometric_cobra/deprecated")
+
+gs_C  <- read.csv2("./results/dataframes/entrez_IDs_C.csv")[,1]  %>% as.character #%>% entrez_to_gene
+gs_F  <- read.csv2("./results/dataframes/entrez_IDs_F.csv")[,1]  %>% as.character #%>% entrez_to_gene
+gs_CF <- read.csv2("./results/dataframes/entrez_IDs_CF.csv")[,1] %>% as.character #%>% entrez_to_gene
+```
+
+
+```{r}
+
+library(EnhancedVolcano)
+library(magrittr)
+
+get_processed_results <- function(annotated_results, subset){
+  annotated_results %>% dplyr::filter(entrezgene_id %in% subset) %>% dplyr::select(-c(mouse_ensembl_transcript_id,hsapiens_ensembl,entrezgene_id)) %>%
+  group_by(hgnc_symbol) %>% summarise_all(median,  na.rm = TRUE) ->processed_results
+  return(processed_results)
+}
+
+
+
+get_processed_results(annotated_results, gs_C) -> Concentration
+get_processed_results(annotated_results, gs_F) -> Flux
+get_processed_results(annotated_results, gs_CF) -> C_and_F
+
+pValue_cutoff     = 0.05
+FoldChnage_cutoff = .2
+
+df_res <- C_and_F
+
+
+plot <- EnhancedVolcano(
+        df_res, 
+        x = 'log2FoldChange',
+        y = 'padj',
+        title = NULL,
+        subtitle = NULL,#paste0( names( conjuntos )[[i]], " - ", length( unique(conjuntos[[i]][ conjuntos[[i]] %in% df_res$gene_symbol_sig ]) ), " trancripts" ),
+        pCutoff = pValue_cutoff,
+        FCcutoff = FoldChnage_cutoff,
+        pointSize = 1,
+        lab = df_res$hgnc_symbol,
+
+        labSize = 2,
+        boxedLabels = F,
+        drawConnectors = TRUE,
+        widthConnectors = 0.2,
+        colConnectors = 'black',
+        max.overlaps = 100, #Inf,
+    ) + ggthemes::theme_few() + 
+    # coord_flip() + 
+    theme(legend.position="bottom")
+plot
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
