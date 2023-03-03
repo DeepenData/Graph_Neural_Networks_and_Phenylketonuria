@@ -23,10 +23,11 @@ Extract healthy patients to make the "control group"
 setwd("/DeepenData/Repos/geometric_cobra")
 
 #df1              <-read_csv("./metabolite_raw_data/raw_data_to_extract_controls.csv") %>% dplyr::select(!starts_with('...'))
-df1 <- read_csv2("metabolite_raw_data/raw_data_to_extract_CONTROLS.csv") %>% rename(Glu = Glt, Tyr = tir)
+df1 <- read_csv2("metabolite_raw_data/raw_data_to_extract_CONTROLS.csv") %>% rename(Glu = Glt, Tyr = tir) %>% dplyr::select(-c("SA"))
+```
 
 
-
+```{r message=FALSE, warning=FALSE}
 vars_to_drop_NAs <- c("Fecha entrega informe","Fecha de nacimiento","Phe","Tyr", "Edad (días calculados)")
 
 
@@ -55,7 +56,7 @@ Extract PKU patients to make the "PKU group"
 setwd("/DeepenData/Repos/geometric_cobra")
 
 
-df1_pku <-  read_excel('./metabolite_raw_data/raw_data_to_extract_PKUs.xlsx') %>% dplyr::select(-c("...1"))
+df1_pku <-  read_excel('./metabolite_raw_data/raw_data_to_extract_PKUs.xlsx') %>% dplyr::select(-c("...1")) %>% dplyr::select(-c("SA"))
 
 df1_pku %>%  filter(edad_diagnostico_dias<=31)%>%
         mutate(`Fecha.entrega.informe` = as.Date(`Fecha.entrega.informe`,"%d-%m-%Y"))%>%
