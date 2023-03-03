@@ -99,8 +99,8 @@ ggarrange(Phe_, Tyr_, common.legend = T, widths = c(1.06,1),labels = 'a' ) -> Ph
 ```
 
 ```{r fig.height=2, fig.width=8.5}
-subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[1]][1:3], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 7, axis_title_size= 8) + stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5)
-subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[1]][c(4,5,6,8,9)], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 7, axis_title_size = 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5) + ylim(c(0,250))
+subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[1]][1:3], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8) + stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5)
+subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[1]][c(4,5,6,8,9)], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size = 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5) + ylim(c(0,250))
 
 subplot_b <- ggarrange(subplot_1, subplot_2,  nrow = 1, widths = c(1,1.6), labels = 'b', hjust = 0)
 
@@ -108,12 +108,12 @@ subplot_b <- ggarrange(subplot_1, subplot_2,  nrow = 1, widths = c(1,1.6), label
 
 
 ```{r fig.height=2, fig.width=8.5}
-subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[1]][10:11], vars_intervals[[2]][1:3]), angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[1]][10:11], vars_intervals[[2]][1:3]), angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
 #subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[2]][1:3], angle=0, swarm_width = .1, dodge.width = .82, point_size = .2, size_ticks_size = 7, axis_title_size= 8)
 
-subplot_3 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[2]][4:5], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5)
+subplot_3 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[2]][4:5], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5)
 
-subplot_4 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[2]][6:7], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5)
+subplot_4 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[2]][6:7], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5)
 
 subplot_c <- ggarrange(subplot_1, subplot_3, subplot_4,nrow = 1, widths = c(3,1,1), labels = 'c', hjust = 0)
 subplot_c
@@ -121,14 +121,14 @@ subplot_c
 
 
 ```{r fig.height=2, fig.width=8.5}
-subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[2]][8:9], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[2]][8:9], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
 
 
-subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,c(vars_intervals[[2]][10:11], vars_intervals[[3]][1:3], vars_intervals[[3]][4:6]), angle=0, swarm_width = .1, dodge.width = .82, point_size = .2, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,c(vars_intervals[[2]][10:11], vars_intervals[[3]][1:3], vars_intervals[[3]][4:6]), angle=0, swarm_width = .1, dodge.width = .82, point_size = .2, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
 
 #subplot_3 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[3]][1:3], angle=0, swarm_width = .1, dodge.width = .82, point_size = .2, size_ticks_size = 7, axis_title_size= 8)
 
-subplot_4 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[3]][4:6], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test')
+subplot_4 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[3]][4:6], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test')
 
 subplot_d <- ggarrange(subplot_1, subplot_2,nrow = 1, widths = c(1,3), labels = 'd', hjust = 0)
 subplot_d
@@ -136,7 +136,7 @@ subplot_d
 
 ```{r fig.height=2, fig.width=8.5}
 #subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[3]][7:8], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .2, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
-subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,c(vars_intervals[[3]][7:11], vars_intervals[[4]][1:3]),y_label = T , angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,c(vars_intervals[[3]][7:11], vars_intervals[[4]][1:3]),y_label = T , angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
 
 #subplot_3 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[4]][1:4], angle=0, swarm_width = .1, dodge.width = .82, point_size = .2, size_ticks_size = 7, axis_title_size= 8)
 
@@ -145,8 +145,8 @@ subplot_e <- ggarrange(subplot_2,nrow = 1, widths = c(1), labels = 'e', hjust = 
 subplot_e
 ```
 ```{r fig.height=2, fig.width=8.5}
-subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[4]][4:6], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
-subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[4]][7:10], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[4]][4:6], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[4]][7:10], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
 
 
 subplot_f <- ggarrange(subplot_1, subplot_2,nrow = 1, widths = c(1,1.3), labels = 'f', hjust = 0)
@@ -333,7 +333,7 @@ lower_panel
 
 ```{r fig.height=6, fig.width=10}
 
-ggarrange(metabolites_concentration_panel, lower_panel, ncol = 1, heights = c(1,.8)) -> metabolome_flux_panel
+ggarrange(metabolites_concentration_panel, lower_panel, ncol = 1, heights = c(1,.65)) -> metabolome_flux_panel
 
 metabolome_flux_panel
 ```
