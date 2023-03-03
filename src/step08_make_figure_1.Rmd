@@ -9,7 +9,7 @@ library(magrittr)
 library(ggbeeswarm)
 library(ggpubr)
 setwd("/DeepenData/Repos/geometric_cobra")
-metabolites_outliers_imputed           <- arrow::read_parquet("./metabolites_data/metabolites_outliers_imputed.parquet.gzip") %>% as_tibble()%>% mutate(Group = as.factor(Group))
+metabolites_outliers_imputed           <- arrow::read_parquet("./processed_data/metabolites_outliers_removed_and_imputed.parquet.gzip") %>% as_tibble()%>% mutate(Group = as.factor(Group))
 
 table(
 metabolites_outliers_imputed$Group
@@ -165,7 +165,7 @@ metabolites_outliers_imputed %>% make_umap('none') -> umap_plot_1
 
 setwd("/DeepenData/Repos/geometric_cobra")
 
-augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/concentrations/augmented_balanced_metabolite_data.parquet.gzip")
+augmented_metabolite_data <- arrow::read_parquet("./processed_data/augmented_balanced_metabolite_data.parquet.gzip")
 augmented_metabolite_data %>% 
   rename( Group = label) %>% mutate(Group = if_else(Group == 1,'PKU','Control')) %>% make_umap('none')-> umap_plot_2
 

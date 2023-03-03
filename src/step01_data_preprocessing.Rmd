@@ -14,9 +14,19 @@ library(readxl)
 
 Extract healthy patients to make the "control group"
 ```{r message=FALSE, warning=FALSE}
+#setwd("/DeepenData/Repos/geometric_cobra")
+#d <- read_csv2("metabolite_raw_data/Base_de_datos_2010_2020_columnas_limpias.csv") %>% rename(Glu = Glt, Tyr = tir)
+```
+
+
+```{r message=FALSE, warning=FALSE}
 setwd("/DeepenData/Repos/geometric_cobra")
 
-df1              <-read_csv("./metabolite_raw_data/raw_data_to_extract_controls.csv") %>% dplyr::select(!starts_with('...'))
+#df1              <-read_csv("./metabolite_raw_data/raw_data_to_extract_controls.csv") %>% dplyr::select(!starts_with('...'))
+df1 <- read_csv2("metabolite_raw_data/raw_data_to_extract_CONTROLS.csv") %>% rename(Glu = Glt, Tyr = tir)
+
+
+
 vars_to_drop_NAs <- c("Fecha entrega informe","Fecha de nacimiento","Phe","Tyr", "Edad (días calculados)")
 
 
