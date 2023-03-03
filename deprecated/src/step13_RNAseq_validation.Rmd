@@ -25,7 +25,7 @@ Mm.ensembl <- useMart("ensembl",dataset="mmusculus_gene_ensembl")
 
 ```{r message=FALSE, warning=FALSE}
 searchAttributes(mart = Mm.ensembl, pattern = "hsa")
-searchAttributes(mart = Mm.ensembl, pattern = "transc")
+searchAttributes(mart = Hs.ensembl, pattern = "descri")
 ```
 
 
@@ -35,7 +35,7 @@ res <- readRDS("./MM/RNA_results.RDS")
 res %>% rownames() -> all_ENSMUST
 ```
 ```{r}
-c('ENSMUST00000228829','ENSMUST00000228611','ENSMUST00000096990') -> transcripts
+#c('ENSMUST00000228829','ENSMUST00000228611','ENSMUST00000096990') -> transcripts
 
 
 temp_1 <- getBM(attributes=c('ensembl_transcript_id','hsapiens_homolog_ensembl_gene'),filters ='ensembl_transcript_id',values =all_ENSMUST, mart = Mm.ensembl)
@@ -54,11 +54,11 @@ colnames(temp_1)<-c("mouse_ensembl_transcript_id", "hsapiens_ensembl")
 
 #searchAttributes(mart = Hs.ensembl, pattern = "entrez")
 
-temp_2 <- getBM(attributes=c('ensembl_gene_id','hgnc_symbol','entrezgene_id'), 
+temp_2 <- getBM(attributes=c('ensembl_gene_id','hgnc_symbol','entrezgene_id','entrezgene_description'), 
                 filters ='ensembl_gene_id',values = temp_1$hsapiens_ensembl, mart = Hs.ensembl)
 
 
-colnames(temp_2) <- c("hsapiens_ensembl", "hgnc_symbol", "entrezgene_id")
+colnames(temp_2) <- c("hsapiens_ensembl", "hgnc_symbol", "entrezgene_id", 'description')
 
 ```
 ```{r}
@@ -86,7 +86,7 @@ library(EnhancedVolcano)
 library(magrittr)
 
 get_processed_results <- function(annotated_results, subset){
-  annotated_results %>% dplyr::filter(entrezgene_id %in% subset) %>% dplyr::select(-c(mouse_ensembl_transcript_id,hsapiens_ensembl,entrezgene_id)) %>%
+  annotated_results %>% dplyr::filter(entrezgene_id %in% subset) %>% dplyr::select(-c(mouse_ensembl_transcript_id,hsapiens_ensembl,entrezgene_id, description)) %>%
   group_by(hgnc_symbol) %>% summarise_all(median,  na.rm = TRUE) ->processed_results
   return(processed_results)
 }
@@ -98,9 +98,9 @@ get_processed_results(annotated_results, gs_F) -> Flux
 get_processed_results(annotated_results, gs_CF) -> C_and_F
 
 pValue_cutoff     = 0.05
-FoldChnage_cutoff = .2
+FoldChnage_cutoff = .1
 
-df_res <- C_and_F
+df_res <- Flux # Concentration, Flux, C_and_F
 
 
 plot <- EnhancedVolcano(
@@ -127,8 +127,18 @@ plot
 ```
 
 
+```{r message=FALSE, warning=FALSE}
 
+DEGs_table <- function(case){
+  case %>% dplyr::filter(padj < pValue_cutoff & abs(log2FoldChange) > FoldChnage_cutoff) %>% dplyr::select(c(hgnc_symbol, log2FoldChange, padj)) -> significant_genes
+  return(
+  inner_join(annotated_results[c("hgnc_symbol", "description")] %>% unique(), significant_genes) %>% arrange(log2FoldChange))
+}
 
+DEGs_table(Concentration)
+DEGs_table(Flux)
+DEGs_table(C_and_F)
+```
 
 
 
