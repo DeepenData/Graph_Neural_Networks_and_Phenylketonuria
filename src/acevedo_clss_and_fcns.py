@@ -585,8 +585,8 @@ def train_and_validate(gnn_type, mask, flux, concentration, loader_path , EPOCHS
 
 
     
-    all_train_accuracy_Unmasked = []
-    all_validation_accuracy_Unmasked = []
+    all_train_accuracy_ = []
+    all_validation_accuracy_ = []
     best_validation_accuracy = 1e-10
     for epoch in tqdm.tqdm(range(EPOCHS)):
         
@@ -598,8 +598,8 @@ def train_and_validate(gnn_type, mask, flux, concentration, loader_path , EPOCHS
 
         validation_accuracy = validate(model, loader.get_validation_loader(), device)
         
-        all_train_accuracy_Unmasked.extend([train_accuracy])
-        all_validation_accuracy_Unmasked.extend([validation_accuracy])
+        all_train_accuracy_.extend([train_accuracy])
+        all_validation_accuracy_.extend([validation_accuracy])
         
         
         if validation_accuracy > best_validation_accuracy:
@@ -633,7 +633,7 @@ def train_and_validate(gnn_type, mask, flux, concentration, loader_path , EPOCHS
                     torch.save(best_val_model, model_path)
                     print(f"saved as {model_path}")
                     
-    return best_val_model, all_train_accuracy_Unmasked, all_validation_accuracy_Unmasked
+    return model_path, all_train_accuracy_, all_validation_accuracy_
 
 
 from sklearn.metrics import roc_curve, auc
