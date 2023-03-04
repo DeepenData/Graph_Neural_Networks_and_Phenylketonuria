@@ -100,8 +100,8 @@ ggarrange(Phe_, Tyr_, common.legend = T, widths = c(1.06,1),labels = 'a' ) -> Ph
 ```
 
 ```{r fig.height=2, fig.width=8.5}
-subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[1]][1:3], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8) + stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5)
-subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[1]][c(4,5,6,8,9)], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size = 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5) + ylim(c(0,250))
+subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[1]][1:3], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8) + stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5,  size = 3)
+subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[1]][c(4,5,6,8,9)], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size = 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5,  size = 3) + ylim(c(0,250))
 
 subplot_b <- ggarrange(subplot_1, subplot_2,  nrow = 1, widths = c(1,1.6), labels = 'b', hjust = 0)
 
@@ -109,12 +109,12 @@ subplot_b <- ggarrange(subplot_1, subplot_2,  nrow = 1, widths = c(1,1.6), label
 
 
 ```{r fig.height=2, fig.width=8.5}
-subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[1]][10:11], vars_intervals[[2]][1:3]), angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, c(vars_intervals[[1]][10:11], vars_intervals[[2]][1:3]), angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5,  size = 3)
 #subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[2]][1:3], angle=0, swarm_width = .1, dodge.width = .82, point_size = .2, size_ticks_size = 7, axis_title_size= 8)
 
-subplot_3 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[2]][4:5], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5)
+subplot_3 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[2]][4:5], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5,  size = 3)
 
-subplot_4 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[2]][6:7], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5)
+subplot_4 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[2]][6:7], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label = "p.signif", method = 'wilcox.test', vjust = 1.5,  size = 3)
 
 subplot_c <- ggarrange(subplot_1, subplot_3, subplot_4,nrow = 1, widths = c(3,1,1), labels = 'c', hjust = 0)
 subplot_c
@@ -122,14 +122,14 @@ subplot_c
 
 
 ```{r fig.height=2, fig.width=8.5}
-subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[2]][8:9], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[2]][8:9], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5,  size = 3)
 
 
-subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,c(vars_intervals[[2]][10:11], vars_intervals[[3]][1:3], vars_intervals[[3]][4:6]), angle=0, swarm_width = .1, dodge.width = .82, point_size = .2, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,c(vars_intervals[[2]][10:11], vars_intervals[[3]][1:3], vars_intervals[[3]][4:6]), angle=0, swarm_width = .1, dodge.width = .82, point_size = .2, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5,  size = 3)
 
 #subplot_3 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[3]][1:3], angle=0, swarm_width = .1, dodge.width = .82, point_size = .2, size_ticks_size = 7, axis_title_size= 8)
 
-subplot_4 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[3]][4:6], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test')
+subplot_4 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[3]][4:6], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test',  size = 3)
 
 subplot_d <- ggarrange(subplot_1, subplot_2,nrow = 1, widths = c(1,3), labels = 'd', hjust = 0)
 subplot_d
@@ -137,7 +137,7 @@ subplot_d
 
 ```{r fig.height=2, fig.width=8.5}
 #subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[3]][7:8], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .2, size_ticks_size = 7, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
-subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,c(vars_intervals[[3]][7:11], vars_intervals[[4]][1:3]),y_label = T , angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,c(vars_intervals[[3]][7:11], vars_intervals[[4]][1:3]),y_label = T , angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5,  size = 3)
 
 #subplot_3 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[4]][1:4], angle=0, swarm_width = .1, dodge.width = .82, point_size = .2, size_ticks_size = 7, axis_title_size= 8)
 
@@ -146,8 +146,8 @@ subplot_e <- ggarrange(subplot_2,nrow = 1, widths = c(1), labels = 'e', hjust = 
 subplot_e
 ```
 ```{r fig.height=2, fig.width=8.5}
-subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[4]][4:6], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
-subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[4]][7:10], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+subplot_1 <- get_concentration_subplot(metabolites_outliers_imputed, vars_intervals[[4]][4:6], angle=0,  y_label = T, swarm_width = .08, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5,  size = 3)
+subplot_2 <- get_concentration_subplot(metabolites_outliers_imputed,vars_intervals[[4]][7:10], angle=0, swarm_width = .1, dodge.width = .82, point_size = .1, size_ticks_size = 5, axis_title_size= 8)+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5,  size = 3)
 
 
 subplot_f <- ggarrange(subplot_1, subplot_2,nrow = 1, widths = c(1,1.3), labels = 'f', hjust = 0)
@@ -292,9 +292,9 @@ THBP <- c("DHPR", "DHPR2", "THBPT4ACAMDASE", "r0403", "r0398", 'DHPR2', 'PPOR', 
 
 
 
-flux_1 <- get_flux_plot(flux_set = THBP, a = 1,b = 4,dodge.width = 1,swarm_width = .1,point_size  = .01,axis_title_size = 9,size_ticks_size =5,angle =0,legend.position = "none", y_label = T) + ylab(("Flux"))+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
-flux_2 <-get_flux_plot(flux_set = THBP, a = 7,b = 10,dodge.width = 1,swarm_width = .1,point_size  = .01,axis_title_size = 1,size_ticks_size =5,angle =0,legend.position = "none", y_label = T)  + ylim(c(0,5))+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
-flux_3 <-get_flux_plot(flux_set = THBP, a = 11,b = 13,dodge.width = 1,swarm_width = .1,point_size  = .01,axis_title_size = 1,size_ticks_size =5,angle =0,legend.position = "none", y_label = T)  + stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)
+flux_1 <- get_flux_plot(flux_set = THBP, a = 1,b = 4,dodge.width = 1,swarm_width = .1,point_size  = .01,axis_title_size = 9,size_ticks_size =5,angle =0,legend.position = "none", y_label = T) + ylab(("Flux"))+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5,  size = 3)
+flux_2 <-get_flux_plot(flux_set = THBP, a = 7,b = 10,dodge.width = 1,swarm_width = .1,point_size  = .01,axis_title_size = 1,size_ticks_size =5,angle =0,legend.position = "none", y_label = T)  + ylim(c(0,5))+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5,  size = 3)
+flux_3 <-get_flux_plot(flux_set = THBP, a = 11,b = 13,dodge.width = 1,swarm_width = .1,point_size  = .01,axis_title_size = 1,size_ticks_size =5,angle =0,legend.position = "none", y_label = T)  + stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5,  size = 3)
 ggarrange(flux_1, flux_2, flux_3, nrow = 1, widths = c(1, 1.6), labels = "i") -> THBP_fluxes
 THBP_fluxes
 ```
@@ -306,7 +306,7 @@ ACYL <- c(  'C181OHc', 'C40CPT1', 'FAOXC3DC',
           'C180CPT1', 'C181CPT1', 'C204CPT1', 'C226CPT1', 'CLPNDCPT1', 'DMNONCOACRNCPT1', 'DMNONCOACRNCPT1', 'EICOSTETCPT1', 'OCTDECCPT1', 'OCD11COACPT1', 'C81CPT1', 'C80CPT1', 'C60CPT1', 'C51CPT1')#, )#, 'DMNONCOACRNCPT1')#, 'EICOSTETCPT1'),'FAOXC14C12m', 'C50CPT1''ARACHCPT1','C161CPT12', 'FAOXC14C14OHm',
 
 
-flux_1 <- get_flux_plot(flux_set = ACYL, a = 1, b = 10,dodge.width = 1,swarm_width = .1,point_size  = .01,axis_title_size = 9,size_ticks_size =5,angle =0,legend.position = "none", y_label = T) + ylab(("Flux"))+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1)
+flux_1 <- get_flux_plot(flux_set = ACYL, a = 1, b = 10,dodge.width = 1,swarm_width = .1,point_size  = .01,axis_title_size = 9,size_ticks_size =5,angle =0,legend.position = "none", y_label = T) + ylab(("Flux"))+ stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1,  size = 3)
 #flux_2 <-get_flux_plot(flux_set = ACYL, a = 14,b = 17,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 1,size_ticks_size =7,angle =45,legend.position = "none", y_label = T)  + stat_compare_means(label="p.signif",method='wilcox.test', vjust = 1.5)#+ ylim(c(0,15))
 #flux_4 <-get_flux_plot(flux_set = ACYL, a = 13,b = 15,dodge.width = 1,swarm_width = .1,point_size  = .3,axis_title_size = 1,size_ticks_size =5,angle =45,legend.position = "none", y_label = T)  #+ coord_trans( y="log2")
 ggarrange(flux_1, nrow = 1, widths = c(3,1), labels = 'j') -> ACYLS_fluxes
@@ -349,15 +349,15 @@ setwd("/DeepenData/Repos/geometric_cobra")
 
 #img <- png::readPNG("./results/graphs/for_visualizations/control_concentration.png")
 
-control_concentration.png <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/control_concentration_v2.png"))
-PKU_concentration.png     <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/PKU_concentration_v2.png"))
+control_concentration.png <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/metabolites_control.png"))
+PKU_concentration.png     <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/metabolites_PKU.png"))
 
-control_fluxes.png     <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/control_fluxes_v2.png"))
-PKU_fluxes.png         <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/PKU_fluxes_v2.png"))
+control_fluxes.png     <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/flux_control.png"))
+PKU_fluxes.png         <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/flux_PKU.png"))
 
 
 
-annotate_figure(control_concentration.png, left = 'Metabolites', top = 'Control') -> control_concentration.png
+annotate_figure(control_concentration.png, left = 'Metabolite abundance', top = 'Control') -> control_concentration.png
 annotate_figure(PKU_concentration.png,  top = 'PKU') -> PKU_concentration.png
 
 
@@ -378,453 +378,22 @@ graphs_panel
 ```
 
 
-```{r fig.height=9.5, fig.width=8.4}
+```{r fig.height=10, fig.width=10}
 
 
-ggarrange(metabolome_panel, graphs_panel, ncol = 1, heights = c(4,1.1)) -> full_panel
+ggarrange(metabolome_flux_panel, graphs_panel, ncol = 1, heights = c(4,1.3)) -> full_panel
 
+full_panel
 
-
+```
+```{r}
+setwd("/DeepenData/Repos/geometric_cobra")
+ggsave("./results/figures/Figure_1.png",full_panel, height = 10, width = 10, dpi= 300, bg='white')
 ```
 
 ####################################################################################################
 ################################--------END--------------###########################################
 ####################################################################################################
-
-```{r message=FALSE, warning=FALSE}
-#metabolite_data        <- read_csv("./metabolites_data/metabolite_data.csv")
-#subsys_fluxes_non_zero <- arrow::read_parquet("./results/flux/subsys_fluxes_non_zero.parquet.gzip")
-
-
-
-get_vars_by_quntl <- function(df){
-                                df %>% 
-                                summarise(across(where(is.double),  ~ mean(.x, na.rm = TRUE))) %>% t -> vars_mean
-                              q_25 <- quantile(vars_mean, 0.25, na.rm = TRUE)[[1]]
-                              q_50 <- quantile(vars_mean, 0.5, na.rm = TRUE)[[1]]
-                              q_75 <- quantile(vars_mean, 0.75, na.rm = TRUE)[[1]]
-                              
-                              vars_q_1 <- vars_mean[vars_mean < q_25,] %>% names 
-                              vars_q_2 <- vars_mean[q_25 <= vars_mean & vars_mean < q_50,] %>% names 
-                              vars_q_3 <- vars_mean[q_50 <= vars_mean &   vars_mean < q_75,] %>% names 
-                              vars_q_4 <- vars_mean[q_75 <= vars_mean ,] %>% names 
-                              return(list(vars_q_1, vars_q_2, vars_q_3, vars_q_4))
-}
-
-foo <- function(plot){
-                             p <- ggplot_build(plot)
-                             p$data[[1]] <-   p$data[[1]] %>%
-                             mutate(diff = abs(x-round(x)), x = case_when(group %% 2 == 0 ~ round(x) + diff,
-                                                    TRUE ~ round(x) - diff)) %>%    select(-diff)
-                             
-                             
-                             return(
-                               (ggplot_gtable(p))
-                             )
-                             
-}
-
-plot_split_violins <- function(data, quntl_num,vars_by_quntl ,legend.position, logscale, alpha, size_marker, color_1, color_2){
-                          colours <- c(alpha(c( color_1), alpha), alpha(c(color_2), 1))
-                          #data %>% get_vars_by_quntl -> vars_by_quntl
-                          
-                          
-                          
-                          p <- data %>% dplyr::select(c(vars_by_quntl[[quntl_num]], "Group")) %>%  pivot_longer(-Group)  %>% 
-                          ggplot(aes(name,value,color= Group))+ 
-                          geom_quasirandom(size= c(size_marker)) + #scale_fill_manual(values = colours, name = "") +
-                          theme_minimal()+
-                          guides(color = guide_legend(override.aes = list(size = 3, alpha = 1) ))+ 
-                          theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-                                  axis.title.y = element_blank(), legend.position=legend.position,
-                                 legend.text = element_text(size=7))+scale_color_discrete(name="")+
-                            scale_colour_manual(values = colours, name = "") 
-                          
-                          if(logscale){p <-p  + coord_trans( y="log2") }
-                          
-                          return(foo(p) %>% as_ggplot)  }
-
-generate_right_swarms <- function(metabolite_data, color_1="dodgerblue2", color_2="darkorange"){
-            metabolite_data %>% dplyr::select(-c('Phe')) %>% get_vars_by_quntl -> vars_by_quntl
-            
-            vars_by_quntl[[5]] <- c('Phe')
-            a_subplot <-plot_split_violins(metabolite_data, 5 , vars_by_quntl, 'top', TRUE, .1, .6, color_1=color_1, color_2=color_2)
-            b_subplot <- plot_split_violins(metabolite_data, 4 , vars_by_quntl, 'none', F, .02, .01, color_1=color_1, color_2=color_2)
-            c_subplot <- plot_split_violins(metabolite_data, 3 , vars_by_quntl, 'none', F, .02, .01, color_1=color_1, color_2=color_2)
-            d_subplot <- plot_split_violins(metabolite_data, 2 , vars_by_quntl, 'none', F, .02, .01, color_1=color_1, color_2=color_2)
-            e_subplot <- plot_split_violins(metabolite_data, 1 , vars_by_quntl, 'none', F, .02, .01, color_1=color_1, color_2=color_2)
-            right_swarms <- ggarrange(b_subplot, c_subplot, d_subplot, e_subplot, ncol = 1, labels = c("b","c","d","e"), vjust = 1.1, hjust = .5)
-            ggarrange(a_subplot, right_swarms, widths = c(.55, 1), labels = c("a",""), vjust = 1.1) -> swarm_panel
-            return(swarm_panel)
-}
-
-
-make_swarm_panel <- function(df){
-                            right_swarms <- generate_right_swarms(df)
-                            a_subplot <-plot_split_violins(df, 5 , vars_by_quntl, 'top', TRUE, .1, .6)
-                            ggarrange(a_subplot, right_swarms, widths = c(.55, 1), labels = c("a",""), vjust = 1.1) -> swarm_panel
-                            return(swarm_panel)
-}
-
-```
-
-
-```{r fig.height=6, fig.width=5, message=FALSE, warning=FALSE}
-
-setwd("/DeepenData/Repos/geometric_cobra")
-
-metabolites_outliers_imputed     <- arrow::read_parquet("./metabolites_data/metabolites_outliers_imputed.parquet.gzip")
-rownames(metabolites_outliers_imputed) <- NULL
-generate_right_swarms(metabolites_outliers_imputed) -> concentration_subplot
-# a_subplot <-plot_split_violins(metabolites_outliers_imputed, 5 , vars_by_quntl, 'top', TRUE, .1, .6)
-```
-
-
-
-
-```{r fig.height=6, fig.width=5, message=FALSE, warning=FALSE}
-setwd("/DeepenData/Repos/geometric_cobra")
-
-augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/concentrations/augmented_metabolite_data_v2.parquet.gzip") 
-augmented_data <- augmented_metabolite_data %>%mutate(label = dplyr::if_else(label == 1, "PKU", "Control")) %>% rename(Group = label)
-
-aug_PKUs <-augmented_data %>% dplyr::filter(Group == "PKU")
-generate_right_swarms(aug_PKUs, color_1 = "darkorange", color_2 = "darkorange") -> concentration_subplot_augmented
-```
-
-
-
-
-
-
-
-```{r}
-make_umap <- function(data, legend.position){UMAPM <- umap::umap(data  %>% select_if(is.numeric) %>% 
-                                                                        as.matrix(), n_neighbors = 20, scale = T, n_threads = 20, fast_sgd = F, metric = 'cosine', spread = 10)
-                       
-                                                       
-
-p <- ggplot(as_tibble(UMAPM$layout), aes(V1, V2, colour= data[["Group"]]))
-                                                        UMAP_reduction <-  p + geom_point(size= .2) + xlab('UMAP dimension 1') + ylab('UMAP dimension 2')+
-                                                          scale_colour_manual(values =  c(alpha(c( "dodgerblue2"), .5), alpha(c("darkorange"), 1)))+ 
-                                                          theme(legend.position=legend.position, text = element_text(size = 9), axis.title.y = element_text(size = 7),  axis.title.x = element_text(size = 7))   +
-                                                             guides(color = guide_legend(override.aes = list(size = 3) ) )+guides(color = guide_legend(title = "Group", override.aes = list(size = 3) )) 
-                                                        return(UMAP_reduction)}
-
-#metabolite_data %>% make_umap('none') -> umap_plot_1
-```
-```{r}
-setwd("/DeepenData/Repos/geometric_cobra")
-
-metabolites_outliers_imputed     <- arrow::read_parquet("./metabolites_data/metabolites_outliers_imputed.parquet.gzip") # %>% rename( Group = label) #%>% mutate(Group = if_else(Group == 1,'PKU','Control')) #%>% make_umap('none')-> umap_plot_1
-
-metabolites_outliers_imputed %>% make_umap('none') -> umap_plot_1
-
-```
-
-
-```{r}
-setwd("/DeepenData/Repos/geometric_cobra")
-
-augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/concentrations/augmented_metabolite_data_v2.parquet.gzip")
-augmented_metabolite_data %>% 
-  rename( Group = label) %>% mutate(Group = if_else(Group == 1,'PKU','Control')) %>% make_umap('none')-> umap_plot_2
-
-```
-```{r fig.height=7, fig.width=4}
-
-
-
-ggarrange(umap_plot_1, umap_plot_2, labels = c("f","g"), vjust = 1.1, hjust = .2) -> umap_panel
-
-
-
-
-ggarrange(concentration_subplot, umap_panel, ncol = 1, heights = c(1,.25)) -> left_panel
-
-```
-
-
-
-############################################
-##########-------FLUX----------------------
-
-```{r}
-setwd("/DeepenData/Repos/geometric_cobra")
-
-all_flux_samples <-  arrow::read_parquet("./results/dataframes/fluxes/all_flux_samples.parquet.gzip")
-all_flux_samples  %<>% 
-  rename( Group = label) %>% mutate(Group = if_else(Group == 1,'PKU','Control'))
-```
-```{r}
-subsys<- c('DHPR2',
- 'PHETA1m',
- 'PHYCBOXL',
- 'PPOR',
- 'PTHPS',
- 'THBPT4ACAMDASE',
- 'r0403',
- 'r0545',
- 'r0547',
- 'RE0830C',
- 'RE0830N',
- 'RE1709C',
- 'RE1709N',
- 'RE2660C',
- 'RE2660N',
- 'PHLAC',
- 'DHPR',
- 'r0398',
- 'PHETA1',
- 'HMR_6729',
- 'HMR_6755',
- 'HMR_6770',
- 'HMR_6782',
- 'HMR_6790',
- 'HMR_6854',
- 'HMR_6874',
- 'HMR_6876',
- "Group")
-
-
-
-
-```
-
-
-```{r fig.height=2, fig.width=10}
-colours <- c(alpha(c( "dodgerblue"), .8), alpha(c("darkorange"), .8))
-
-
-                       p <- all_flux_samples %>% dplyr::select(subsys) %>% sample_n(500)  %>%  
-                       pivot_longer(-Group)  %>% 
-                          
-                            
-                            ggplot(aes(name,value,color= Group))+ 
-                          geom_quasirandom(size= c(.1)) + #scale_fill_manual(values = colours, name = "") +
-                          theme_minimal()+
-                          guides(color = guide_legend(override.aes = list(size = 5, alpha = 1) ))+ 
-                          theme(axis.title.x = element_blank(),axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-                                  axis.title.y = element_blank(), legend.position="none",axis.text = element_text(size = 7),
-                                 legend.text = element_text(size=7))+scale_color_discrete(name="")+
-                            scale_colour_manual(values = colours, name = "")
-foo(p)%>% as_ggplot -> flux_subplot
-
-```
-
-######################################################################################
-######################################################################################
-#########################################################################
-```{r}
-
-
-
-setwd("/DeepenData/Repos/geometric_cobra")
-
-#img <- png::readPNG("./results/graphs/for_visualizations/control_concentration.png")
-
-control_concentration.png <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/control_concentration.png"))
-PKU_concentration.png     <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/PKU_concentration.png"))
-
-control_fluxes.png     <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/control_fluxes.png"))
-PKU_fluxes.png         <- ggplot() + background_image( png::readPNG("./results/graphs/for_visualizations/PKU_fluxes.png"))
-
-
-
-ggarrange(control_concentration.png, PKU_concentration.png, control_fluxes.png, PKU_fluxes.png, labels = c("i","","j","")) ->  graphs_panel
-
-ggarrange(umap_panel, flux_subplot,graphs_panel, nrow = 3, heights = c(.3,.4,1), labels = c("","h",""), vjust = -.1) -> right_panel
-
-
-```
-
-
-```{r fig.height=7, fig.width=9}
-ggarrange(concentration_subplot,right_panel, ncol = 2, widths = c(1,.9) ) -> full_panel
-```
-
-```{r}
-
-setwd("/DeepenData/Repos/geometric_cobra")
-
-
-
-ggsave('./results/figures/figure_1.png', full_panel, height = 7, width = 9, bg = "white")
-```
-
-
-
-#
-#
-#
-```{r}
-plot_swarm       <- function(df, size, alpha){
-                              df%>% pivot_longer(everything()) -> long
-                              ggplot(long,aes(name, value)) + geom_quasirandom(size=size, alpha = alpha, aes(color='red4')) -> my_plot
-                              return(my_plot)}
-
-
-
-
-
-
-
-p <- subsys_fluxes_non_zero[,colSums(subsys_fluxes_non_zero)%>%abs > 1] %>% sample_n(1000) %>% abs %>% plot_swarm(.2,.2) 
-
-flux_subplot <- p + ylim(c(0,5.9)) + 
-  xlab('Reaction')+ ylab('Flux') + theme_minimal() +  theme(legend.position = 'none', axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
-
-```
-
-
-```{r fig.height=6, fig.width=7.5}
-umap_panel <-  ggarrange(umap_plot_1, umap_plot_2, widths = c(1,1))
-
-ggarrange(umap_panel, graph, flux_subplot, ncol = 1, heights = c(.4,1,.55), labels = c("f","g","h"),  vjust = 1.1, hjust = .5) -> right_panel
-
-ggarrange(swarm_panel, right_panel, ncol = 2, widths = c(1,.7)) -> figure_1_panel
-
-```
-
-
-```{r fig.height=6, fig.width=7.5}
-setwd("/DeepenData/Repos/geometric_cobra")
-
-ggsave("./results/figures/Figure_1.png", 
-       figure_1_panel, height=6.5, width=8, bg = "white")
-
-```
-
-
-#####################################################################################################################################################
-######################################################################################################################################################
-```{r message=FALSE, warning=FALSE}
-get_data_subset <- function(df , condition, aminoacids){
-                                        df %<>%  select(!dplyr::matches('SA')) %>%
-                                        dplyr::filter(Group==condition) %>% 
-                                        select_if(is.numeric) 
-                                        if(aminoacids){df %<>% select(!dplyr::matches('C\\d+'))
-                                        } else {df %<>% select(dplyr::matches('C\\d+'))}
-                                        return(df)}
- 
-AAs_PKU        <- get_data_subset(metabolite_data, "PKU", T)
-AcylCs_PKU     <- get_data_subset(metabolite_data, "PKU", F)
-AAs_Control    <- get_data_subset(metabolite_data, "Control", T)
-AcylCs_Control <- get_data_subset(metabolite_data, "Control", F)
-```
-
-```{r message=FALSE, warning=FALSE}
-library(ComplexHeatmap)
-
-plot_densityHeatmap <- function(df, title, pallete){
-    return(
-   ggplotify::as.ggplot(densityHeatmap(df %>% scale , ylim = c(-1.5, 1.5), cluster_columns = TRUE, title = title, ylab = "", col = pallete,
-                                                     title_gp = gpar(fontsize = 6), tick_label_gp = gpar(fontsize = 6), quantile_gp = gpar(fontsize = 6),
-                                                     column_names_gp = gpar(fontsize = 6),column_names_rot = 50 )) 
-    )}
-
-
-FLUX_PKU_plot  <- subsys_fluxes_non_zero  %>% plot_densityHeatmap("", rev(RColorBrewer::brewer.pal(11, "RdYlGn")))
-
-
-```
-
-```{r fig.height=8, fig.width=5, message=FALSE, warning=FALSE}
-library(ggpubr)
-
-AAs_Control_plot  <- AAs_Control %>% plot_densityHeatmap("", rev(RColorBrewer::brewer.pal(11, "Spectral")))
-AcylCs_Control_plot <- AcylCs_Control %>% plot_densityHeatmap("", rev(RColorBrewer::brewer.pal(11, "Spectral")))
-AAs_PKU_plot <- AAs_PKU %>% plot_densityHeatmap("", rev(RColorBrewer::brewer.pal(11, "Spectral")))
-AcylCs_PKU_plot <- AcylCs_PKU %>% plot_densityHeatmap("", rev(RColorBrewer::brewer.pal(11, "Spectral")))
-
-
-densityHeatmap_panel <- ggarrange(AAs_Control_plot, AcylCs_Control_plot,
-                                  AAs_PKU_plot, AcylCs_PKU_plot, 
-                                  ncol = 1 ,  common.legend = T, heights = c(.75,1,.75,1), labels = c("a","b","c","d"))
-
-```
-
-```{r fig.height=4, fig.width=7, message=FALSE, warning=FALSE}
-library(umap)
-
-make_umap <- function(AAs_Control, AcylCs_Control,AAs_PKU, AcylCs_PKU){
-                                                          data_control <-cbind(AAs_Control,AcylCs_Control)
-                                                        data_PKU     <- cbind(AAs_PKU,AcylCs_PKU)
-                                                        data_control["Group"] <- "Control"
-                                                        data_PKU["Group"] <- "PKU"
-                                                        
-                                                        data <- rbind(data_PKU,data_control)
-                                                        
-                                                        UMAPM <- umap(data  %>% select_if(is.numeric) %>% 
-                                                                        as.matrix(), n_neighbors = 50, scale = T, n_threads = 20, fast_sgd = F, metric = 'cosine', spread = 10)
-                                                        p <- ggplot(as_tibble(UMAPM$layout), aes(V1, V2, colour= data[["Group"]]))
-                                                        UMAP_reduction <-  p + geom_point(size= .2) + xlab('UMAP dimension 1') + ylab('UMAP dimension 2')+
-                                                          scale_colour_manual(values = c("cadetblue", "blue"))+ theme(text = element_text(size = 9))   +
-                                                             guides(color = guide_legend(override.aes = list(size = 3) ) )+guides(color = guide_legend(title = "Group", override.aes = list(size = 3) )) 
-                                                        return(UMAP_reduction)}
-
-umap_original_data<- make_umap(AAs_Control, AcylCs_Control,AAs_PKU, AcylCs_PKU)
-umap_original_data
-```
-
-```{r}
-setwd("/DeepenData/Repos/geometric_cobra")
-
-augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/augmented_metabolite_data_v2.parquet.gzip")
-augmented_metabolite_data <- rename(augmented_metabolite_data, Condicion = label) %>% dplyr::mutate(Condicion = if_else(Condicion== 1, 'PKU', 'Control'))
-
-
-AAs_PKU_2        <- get_data_subset(augmented_metabolite_data, "PKU", T)
-AcylCs_PKU_2     <- get_data_subset(augmented_metabolite_data, "PKU", F)
-AAs_Control_2    <- get_data_subset(augmented_metabolite_data, "Control", T)
-AcylCs_Control_2 <- get_data_subset(augmented_metabolite_data, "Control", F)
-
-umap_augmented_data <- make_umap(AAs_Control_2, AcylCs_Control_2,AAs_PKU_2, AcylCs_PKU_2)
-umap_augmented_data
-```
-```{r fig.height=8, fig.width=10, message=FALSE, warning=FALSE}
-
-
-umap_panel <- ggarrange(umap_original_data, umap_augmented_data, common.legend = T, labels = c("e","f"), vjust = .5, hjust = .5)
-
-setwd("/DeepenData/Repos/geometric_cobra")
-
-img <- png::readPNG("./results/figures/RECON_graph.png")
-
-graph <- ggplot() + background_image(img)
-
-
-
-UMAP_plus_graph <- ggarrange(umap_panel, graph,FLUX_PKU_plot, ncol = 1, heights = c(1, 2.5, 1), labels = c("","g","h"))
-ggarrange(densityHeatmap_panel, UMAP_plus_graph, widths = c(.95,1), ncol = 2) -> panel
-
-ggsave("/DeepenData/Repos/geometric_cobra/results/figures/Figure_1.png", 
-       panel, height=8, width=9, bg = "white")
-```
-
-
-```{r message=FALSE, warning=FALSE}
-setwd("/DeepenData/Repos/geometric_cobra")
-
-augmented_metabolite_data <- arrow::read_parquet("./results/dataframes/augmented_metabolite_data_v2.parquet.gzip") 
-
-
-
-augmented_metabolite_data
-
-
-
-
-```
-
-
-
-
-
-
-
-
-
 
 
 
