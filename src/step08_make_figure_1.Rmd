@@ -9,7 +9,8 @@ library(magrittr)
 library(ggbeeswarm)
 library(ggpubr)
 setwd("/DeepenData/Repos/geometric_cobra")
-metabolites_outliers_imputed           <- arrow::read_parquet("./processed_data/metabolites_outliers_removed_and_imputed.parquet.gzip") %>% as_tibble()%>% mutate(Group = as.factor(Group))
+metabolites_outliers_imputed           <- arrow::read_parquet("./processed_data/metabolites_outliers_removed_and_imputed.parquet.gzip") %>% as_tibble()%>% mutate(Group = as.factor(Group))  %>% 
+  rename("C4OH+C3DC" = C4OH.C3DC, "C5.OH+C4DC" = C5.OH.C4DC, "Leu+Ile" = Leu.Ile)
 
 table(
 metabolites_outliers_imputed$Group
@@ -188,7 +189,7 @@ augmented_metabolite_data %>%
 
 ```{r fig.height=4, fig.width=2, message=FALSE, warning=FALSE}
 umap_panel <- ggarrange(umap_plot_1, umap_plot_2, nrow = 2, labels = c("g",""), hjust = .34, vjust = .9)
-umap_panel
+
 ```
 
 #FLUX
