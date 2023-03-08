@@ -18,20 +18,18 @@ library(clusterProfiler)
 library(ReactomePA)
 library(org.Hs.eg.db)
 library(fastcluster)
-```
 
-
-```{r message=FALSE, warning=FALSE}
 setwd("/DeepenData/Repos/geometric_cobra")
 C_genes  <- read_csv( "./results/explanations/to_GraphTools_visualization_explanatory_subgraph_MASKED_GIN_Concentration.csv")    %>%  .[['genes']]  %>% str_extract_all('\\d+(?=\\.)') %>% unlist() %>% unique()
 F_genes  <- read_csv( "./results/explanations/to_GraphTools_visualization_explanatory_subgraph_MASKED_GIN_FLUX.csv")    %>%  .[['genes']]  %>% str_extract_all('\\d+(?=\\.)') %>% unlist() %>% unique()
 CF_genes <- read_csv( "./results/explanations/to_GraphTools_visualization_explanatory_subgraph_MASKED_GIN_Concen_plus_Fluxes.csv")    %>%  .[['genes']]  %>% str_extract_all('\\d+(?=\\.)') %>% unlist() %>% unique()
+#ensembl    <- useMart("ensembl")
+Hs.ensembl <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
 ```
 
 
 ```{r message=FALSE, warning=FALSE}
-ensembl    <- useMart("ensembl")
-Hs.ensembl <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
+
 genes_symbols <- list()
 get_functional_annots <- function(entrez_IDs, transporters = F){
                                    temp <- getBM(attributes=c('hgnc_symbol',"entrezgene_id", 'entrezgene_description'),filters ='entrezgene_id',values =entrez_IDs, mart = Hs.ensembl)
@@ -70,7 +68,7 @@ res %>% rownames() -> all_ENSMUST
 
 
 ```{r message=FALSE, warning=FALSE}
-Hs.ensembl       <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
+#Hs.ensembl       <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
 Mm.ensembl       <- useMart("ensembl",dataset="mmusculus_gene_ensembl")
 temp_1           <- getBM(attributes=c('ensembl_transcript_id','hsapiens_homolog_ensembl_gene'),filters ='ensembl_transcript_id',values =all_ENSMUST, mart = Mm.ensembl)
 colnames(temp_1) <- c("mouse_ensembl_transcript_id", "hsapiens_ensembl")
@@ -136,9 +134,9 @@ make_volcano_panel <- function(rxns_and_transps, labSize_1 =3, labSize_2=3,  wid
 
 
 
-C_volcano  <- make_volcano_panel(Concentration_rxns_and_transps, 3,3, c(1,1))
-F_volcano  <- make_volcano_panel(Flux_rxns_and_transps, 2,2, pValue_cutoff = 0.01, common.legend.pos = 'none')
-CF_volcano <- make_volcano_panel(FluxConcentration_rxns_and_transps, 2,2, c(1,1), common.legend.pos = 'none')
+C_volcano  <- make_volcano_panel(Concentration_rxns_and_transps, 3,3, c(1,1),     pValue_cutoff    = 0.05)
+F_volcano  <- make_volcano_panel(Flux_rxns_and_transps, 1.7,2,                      pValue_cutoff  = 0.01, common.legend.pos = 'none')
+CF_volcano <- make_volcano_panel(FluxConcentration_rxns_and_transps, 1.7,2, c(1.6,1),pValue_cutoff = 0.01, common.legend.pos = 'none')
 ```
 
 
@@ -182,18 +180,29 @@ enrich_output %>% dotplot(showCategory = 10, font.size = 7, label_format =90)+
 
 
 
-```{r fig.height=10, fig.width=12, message=FALSE, warning=FALSE}
-enrichment_panel <-  ggarrange(C_enrichPathway, F_enrichPathway, FC_enrichPathway, ncol = 1, common.legend = T, heights = c(.7,1,1), labels = c("a","c","e"))
-volcanos_panel   <- ggarrange(C_volcano, F_volcano, CF_volcano, ncol = 1, common.legend = T, heights = c(.8,1.3,1), labels = c("b","d","f"))
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+volcanos_panel   <- ggarrange(C_volcano, F_volcano, CF_volcano, ncol = 1, common.legend = T, heights = c(.6,1,1), labels = c("b","d","f"))
 
 
-ggarrange(enrichment_panel, volcanos_panel, nrow = 1, widths = c(1,1.8)) -> full_panel
+setwd("/DeepenData/Repos/geometric_cobra")
+ggsave("./results/figures/Figure_4_volcano_panel_subplot.png", volcanos_panel, height = 10, width = 10, bg="white", dpi = 400)
+
+```
+
+
+```{r fig.height=16, fig.width=18, message=FALSE, warning=FALSE}
+enrichment_panel <-  ggarrange(C_enrichPathway, F_enrichPathway, FC_enrichPathway, ncol = 1, common.legend = T, heights = c(.7,1.1,1), labels = c("a","c","e"))
+
+
+ggarrange(enrichment_panel, volcanos_panel, nrow = 1, widths = c(1,2)) -> full_panel
+
+full_panel
 ```
 
 
 ```{r}
 setwd("/DeepenData/Repos/geometric_cobra")
-ggsave("./results/figures/Figure_4.png", full_panel, height = 10, width = 13.5, bg="white", dpi = 400)
+ggsave("./results/figures/Figure_4.png", full_panel, height = 12, width = 15.5, bg="white", dpi = 400)
 
 ```
 
@@ -210,9 +219,103 @@ get_DEG_table(Concentration_rxns_and_transps, "rxns")     %>% filter(padj < .05 
 get_DEG_table(Concentration_rxns_and_transps, "trns")     %>% filter(padj < .05 & abs(log2FoldChange) > 0.1) -> DEGs_trns_C
 get_DEG_table(Flux_rxns_and_transps, "rxns")              %>% filter(padj < .01 & abs(log2FoldChange) > 0.1) -> DEGs_rxns_F
 get_DEG_table(Flux_rxns_and_transps, "trns")              %>% filter(padj < .01 & abs(log2FoldChange) > 0.1) -> DEGs_trns_F
-get_DEG_table(FluxConcentration_rxns_and_transps, "rxns") %>% filter(padj < .05 & abs(log2FoldChange) > 0.1) -> DEGs_rxns_CF
-get_DEG_table(FluxConcentration_rxns_and_transps, "trns") %>% filter(padj < .05 & abs(log2FoldChange) > 0.1) -> DEGs_trns_CF
+get_DEG_table(FluxConcentration_rxns_and_transps, "rxns") %>% filter(padj < .01 & abs(log2FoldChange) > 0.1) -> DEGs_rxns_CF
+get_DEG_table(FluxConcentration_rxns_and_transps, "trns") %>% filter(padj < .01 & abs(log2FoldChange) > 0.1) -> DEGs_trns_CF
 ```
+```{r fig.height=4, fig.width=4, message=FALSE, warning=FALSE}
+library(ggvenn)
+l <- list(
+DEGs_C = c(DEGs_rxns_C$hgnc_symbol, DEGs_trns_C$hgnc_symbol),
+DEGs_F =  c(DEGs_rxns_F$hgnc_symbol, DEGs_trns_F$hgnc_symbol),
+DEGs_CF = c(DEGs_rxns_CF$hgnc_symbol, DEGs_trns_CF$hgnc_symbol))
+
+ggvenn(l,  stroke_size = 0.4,  set_name_size = 2, text_size = 3.5, show_elements = F) -> supplemental_venn_diagram
+
+
+
+setwd("/DeepenData/Repos/geometric_cobra")
+ggsave("./results/figures/supplemental_venn_diagram.png", supplemental_venn_diagram, height = 4, width = 4, bg="white", dpi = 400)
+```
+```{r}
+DEGs_C = c(DEGs_rxns_C$hgnc_symbol, DEGs_trns_C$hgnc_symbol)
+DEGs_F =  c(DEGs_rxns_F$hgnc_symbol, DEGs_trns_F$hgnc_symbol)
+DEGs_CF = c(DEGs_rxns_CF$hgnc_symbol, DEGs_trns_CF$hgnc_symbol)
+
+all_genes <- c(DEGs_C, DEGs_F, DEGs_CF) %>% unique()
+
+
+
+
+get_gene_row <- function(a_gene){
+                      gene_row <-  c("","","")
+                      if(a_gene %in% DEGs_C){gene_row[1] <-  "\U1F5F8"}
+                      if(a_gene %in% DEGs_F){gene_row[2] <-  "\U1F5F8"}
+                      if(a_gene %in% DEGs_CF){gene_row[3] <-  "\U1F5F8"}
+                      return(gene_row)
+                      }
+
+#a_gene    <- 'UYURT'
+my_rows <- tibble()
+
+
+
+for (a_gene in all_genes){
+  a_row <- get_gene_row(a_gene)
+ my_rows <- rbind(my_rows, a_row)
+}
+
+names(my_rows) <- c("Conc","Flux","Conc+Flux")
+
+my_rows["hgnc_symbol"] <- all_genes
+
+
+
+inner_join(my_rows, 
+           annotated_results[c("hgnc_symbol", "entrezgene_id", "description")] %>% unique
+           )%>% dplyr::group_by(Conc, Flux) %>% arrange(desc("Conc+Flux"), .by_group=T) ->annotated_gene_groups
+
+
+
+
+first_part <- ceiling(nrow(annotated_gene_groups)/2)
+
+
+
+annotated_gene_groups[1:first_part,]                                -> annotated_gene_groups_1
+annotated_gene_groups[(first_part+1):nrow(annotated_gene_groups),]  -> annotated_gene_groups_2
+```
+
+
+```{r fig.height=12.5, fig.width=10.5, message=FALSE, warning=FALSE}
+base_size =8
+
+main.title <- "Supplementary Table 1"
+annotated_gene_groups_1 %>% ggtexttable(theme = ttheme('mBlue', base_size = base_size,  padding = unit(c(1.4, 1.4), "mm"))) %>%
+  tab_add_title(text = main.title, face = "bold", padding = unit(.5, "line"), size = 10, hjust = -.03)  %>%
+ tab_add_footnote(text = "(Continued on next page)", size = 8, face = "italic") -> supplementary_gene_table_1_first
+
+
+
+setwd("/DeepenData/Repos/geometric_cobra")
+ggsave("./results/figures/supplementary_gene_table_1_first.png", supplementary_gene_table_1_first, height = 7.7, width = 10.5, bg="white", dpi = 400)
+```
+
+
+```{r fig.height=12.5, fig.width=9, message=FALSE, warning=FALSE}
+base_size =8
+
+main.title <- "(Continued from previous page)"
+annotated_gene_groups_2 %>% ggtexttable(theme = ttheme('mBlue', base_size = base_size,  padding = unit(c(1.4, 1.4), "mm"))) %>%
+  tab_add_title(text = main.title, face = "bold", padding = unit(.5, "line"), size = 8, hjust = -.03) -> supplementary_gene_table_1_second
+
+
+setwd("/DeepenData/Repos/geometric_cobra")
+ggsave("./results/figures/supplementary_gene_table_1_second.png", supplementary_gene_table_1_second, height = 7.7, width = 10.5, bg="white", dpi = 400)
+
+```
+
+
+
 
 
 ```{r}

@@ -176,8 +176,8 @@ setwd("/DeepenData/Repos/geometric_cobra")
 df_conc     <-  read_csv("./results/explanations/to_functional_R_heatmap_explanatory_subgraph_MASKED_GIN_Concentration.csv") %>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
 labels_conc <- read_csv("./results/dataloaders/labels_masked_only_Concen.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
 
-make_panel(df_conc, labels_conc, F, "",  "./results/figures/Figure_3_subplot_Concentration.png", .995, list(c('b', 'c'),c("a",""))) -> upper_panel;
-#upper_panel[[1]]
+make_panel(df_conc, labels_conc, F, "",  "./results/figures/Figure_3_subplot_Concentration.png", .991, list(c('b', 'c'),c("a",""))) -> upper_panel;
+upper_panel[[1]]
 ```
 
 
@@ -187,8 +187,8 @@ setwd("/DeepenData/Repos/geometric_cobra")
 df_flux     <-  read_csv("./results/explanations/to_functional_R_heatmap_explanatory_subgraph_MASKED_GIN_Fluxes.csv") %>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
 labels_flux <- read_csv("./results/dataloaders/labels_masked_only_Fluxes.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
 
-make_panel(df_flux, labels_flux, F, "",  "./results/figures/Figure_3_subplot_FLUX.png", .95, list(c('e', 'f'),c("d",""))) -> middle_panel;
-#middle_panel[[1]]
+make_panel(df_flux, labels_flux, F, "",  "./results/figures/Figure_3_subplot_FLUX.png", .90, list(c('e', 'f'),c("d",""))) -> middle_panel;
+middle_panel[[1]]
 ```
 
 
@@ -199,15 +199,15 @@ setwd("/DeepenData/Repos/geometric_cobra")
 df_flux     <-  read_csv("./results/explanations/to_functional_R_heatmap_explanatory_subgraph_MASKED_GIN_Concen_plus_Fluxes.csv") %>% dplyr::select(-c("...1")) #to_R_heatmap_explanatory_subgraph_masked_NONflux.csv #to_R_heatmap_explanatory_subgraph_masked_FLUX.csv
 labels_flux <- read_csv("./results/dataloaders/labels_masked_Concen_plus_Fluxes.csv")  %>%  dplyr::select(-c("...1")) %>% .[[1]] #test_labels_masked_NONflux.csv  #test_labels_masked_FLUX.csv
 
-make_panel(df_flux, labels_flux, F, "",  "./results/figures/Figure_3_subplot_Concen_plus_Fluxes.png", .99, list(c('h', 'i'),c("g",""))) -> lower_panel;
-#lower_panel[[1]]
+make_panel(df_flux, labels_flux, F, "",  "./results/figures/Figure_3_subplot_Concen_plus_Fluxes.png", .90, list(c('h', 'i'),c("g",""))) -> lower_panel;
+lower_panel[[1]]
 ```
 
 
 ```{r fig.height=15, fig.width=12, message=FALSE, warning=FALSE}
 
 ggarrange(upper_panel[[1]], middle_panel[[1]], lower_panel[[1]], ncol = 1) -> full_panel
-#full_panel
+full_panel
 ```
 ```{r}
 
