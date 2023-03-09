@@ -60,14 +60,13 @@ get_transporters_and_reactions(C_genes) ->  Concentration_rxns_and_transps
 get_transporters_and_reactions(F_genes) ->  Flux_rxns_and_transps
 get_transporters_and_reactions(CF_genes) -> FluxConcentration_rxns_and_transps
 ```
+
+
+
 ```{r message=FALSE, warning=FALSE}
 setwd("/DeepenData/Repos/geometric_cobra/")
 res <- readRDS("./results/genes/RNA_results.RDS")
 res %>% rownames() -> all_ENSMUST
-```
-
-
-```{r message=FALSE, warning=FALSE}
 #Hs.ensembl       <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
 Mm.ensembl       <- useMart("ensembl",dataset="mmusculus_gene_ensembl")
 temp_1           <- getBM(attributes=c('ensembl_transcript_id','hsapiens_homolog_ensembl_gene'),filters ='ensembl_transcript_id',values =all_ENSMUST, mart = Mm.ensembl)
@@ -122,28 +121,31 @@ make_volcano <- function(df_res,labSize, subtitle, pValue_cutoff     = 0.05, Fol
 ```
 
 
-```{r fig.height=4, fig.width=7, message=FALSE, warning=FALSE}
-make_volcano_panel <- function(rxns_and_transps, labSize_1 =3, labSize_2=3,  widths = c(1,.5), pValue_cutoff = 0.05, common.legend.pos = 'top'){
+```{r fig.height=18, fig.width=18, message=FALSE, warning=FALSE}
+make_volcano_panel <- function(rxns_and_transps, labSize_1 =3, labSize_2=3,  widths = c(1,.5), pValue_cutoff = 0.05, common.legend.pos = 'top', left_y_limts = c(0,10), right_y_limts = c(0,10)){
                                   get_processed_results(annotated_results, rxns_and_transps %>% get_two_Entrez_gene_lists %>% .[['rxns']]) -> Flux_rxns
                                   get_processed_results(annotated_results, rxns_and_transps %>% get_two_Entrez_gene_lists %>% .[['trns']]) -> Flux_trns
                                   
-                                  volcano_panel <- ggarrange(make_volcano(Flux_rxns, labSize = labSize_1, subtitle = 'Reactions', pValue_cutoff = pValue_cutoff), 
-                                                             make_volcano(Flux_trns, labSize = labSize_2, subtitle = 'Transporters', pValue_cutoff=pValue_cutoff), nrow = 1, widths = widths, common.legend = T, legend = common.legend.pos)
+                                  volcano_panel <- ggarrange(make_volcano(Flux_rxns, labSize = labSize_1, subtitle = 'Reactions', pValue_cutoff = pValue_cutoff) + ylim(left_y_limts), 
+                                                             make_volcano(Flux_trns, labSize = labSize_2, subtitle = 'Transporters', pValue_cutoff=pValue_cutoff) + ylim(right_y_limts), nrow = 1, widths = widths, common.legend = T, legend = common.legend.pos)
                                   return(volcano_panel)}
 
 
 
 
-C_volcano  <- make_volcano_panel(Concentration_rxns_and_transps, 3,3, c(1,1),     pValue_cutoff    = 0.05)
-F_volcano  <- make_volcano_panel(Flux_rxns_and_transps, 1.7,2,                      pValue_cutoff  = 0.01, common.legend.pos = 'none')
-CF_volcano <- make_volcano_panel(FluxConcentration_rxns_and_transps, 1.7,2, c(1.6,1),pValue_cutoff = 0.01, common.legend.pos = 'none')
+C_volcano  <- make_volcano_panel(Concentration_rxns_and_transps, 2,2, c(1,1),     pValue_cutoff    = 0.05, left_y_limts = c(0,10), right_y_limts = c(0,10))
+F_volcano  <- make_volcano_panel(Flux_rxns_and_transps, 2,2, widths =c(2.7,1),                      pValue_cutoff  = 0.01, common.legend.pos = 'none',left_y_limts = c(0,20.42), right_y_limts = c(0,12.5))
+CF_volcano <- make_volcano_panel(FluxConcentration_rxns_and_transps, 2,2, widths =c(2.5,1),pValue_cutoff = 0.01, common.legend.pos = 'none', left_y_limts = c(0,20.42), right_y_limts = c(0,12.5))
+
+volcanos_panel   <- ggarrange(C_volcano, F_volcano, CF_volcano, ncol = 1, common.legend = T, heights = c(.4,1,1), labels = c("b","d","f"))
+volcanos_panel
 ```
 
 
 ```{r fig.height=2.5, fig.width=10, message=FALSE, warning=FALSE}
 Concentration_rxns_and_transps %>% get_two_Entrez_gene_lists %>% purrr::set_names(c("Reactions","Transporters")) %>% 
   compareCluster(fun='enrichPathway', pvalueCutoff=1e-3, qvalueCutoff=1e-3)-> enrich_output
-enrich_output %>% dotplot(showCategory = 10, font.size = 7, label_format =90)+
+enrich_output %>% dotplot(showCategory = 10, font.size = 8, label_format =90)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -155,7 +157,7 @@ enrich_output %>% dotplot(showCategory = 10, font.size = 7, label_format =90)+
 ```{r fig.height=3.5, fig.width=10, message=FALSE, warning=FALSE}
 Flux_rxns_and_transps %>% get_two_Entrez_gene_lists %>% purrr::set_names(c("Reactions","Transporters")) %>% 
   compareCluster(fun='enrichPathway', pvalueCutoff=1e-3, qvalueCutoff=1e-3)-> enrich_output
-enrich_output %>% dotplot(showCategory = 10, font.size = 7, label_format =90)+
+enrich_output %>% dotplot(showCategory = 10, font.size = 8, label_format =90)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -168,7 +170,7 @@ enrich_output %>% dotplot(showCategory = 10, font.size = 7, label_format =90)+
 ```{r fig.height=2.5, fig.width=10, message=FALSE, warning=FALSE}
 FluxConcentration_rxns_and_transps %>% get_two_Entrez_gene_lists %>% purrr::set_names(c("Reactions","Transporters")) %>% 
   compareCluster(fun='enrichPathway', pvalueCutoff=1e-3, qvalueCutoff=1e-3)-> enrich_output
-enrich_output %>% dotplot(showCategory = 10, font.size = 7, label_format =90)+
+enrich_output %>% dotplot(showCategory = 10, font.size = 8, label_format =90)+
    theme( 
     legend.text=element_text(size=6),
     legend.position = "bottom",
@@ -180,21 +182,17 @@ enrich_output %>% dotplot(showCategory = 10, font.size = 7, label_format =90)+
 
 
 
-```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
-volcanos_panel   <- ggarrange(C_volcano, F_volcano, CF_volcano, ncol = 1, common.legend = T, heights = c(.6,1,1), labels = c("b","d","f"))
+```{r fig.height=18, fig.width=18, message=FALSE, warning=FALSE}
 
 
 setwd("/DeepenData/Repos/geometric_cobra")
 ggsave("./results/figures/Figure_4_volcano_panel_subplot.png", volcanos_panel, height = 10, width = 10, bg="white", dpi = 400)
 
-```
 
-
-```{r fig.height=16, fig.width=18, message=FALSE, warning=FALSE}
 enrichment_panel <-  ggarrange(C_enrichPathway, F_enrichPathway, FC_enrichPathway, ncol = 1, common.legend = T, heights = c(.7,1.1,1), labels = c("a","c","e"))
 
 
-ggarrange(enrichment_panel, volcanos_panel, nrow = 1, widths = c(1,2)) -> full_panel
+ggarrange(enrichment_panel, volcanos_panel, nrow = 1, widths = c(1,1.6)) -> full_panel
 
 full_panel
 ```
@@ -202,7 +200,7 @@ full_panel
 
 ```{r}
 setwd("/DeepenData/Repos/geometric_cobra")
-ggsave("./results/figures/Figure_4.png", full_panel, height = 12, width = 15.5, bg="white", dpi = 400)
+ggsave("./results/figures/Figure_4.png", full_panel, height = 13, width = 15.2, bg="white", dpi = 500)
 
 ```
 
@@ -281,8 +279,10 @@ first_part <- ceiling(nrow(annotated_gene_groups)/2)
 
 
 
-annotated_gene_groups[1:first_part,]                                -> annotated_gene_groups_1
-annotated_gene_groups[(first_part+1):nrow(annotated_gene_groups),]  -> annotated_gene_groups_2
+annotated_gene_groups[1:(first_part+20),]                                -> annotated_gene_groups_1
+annotated_gene_groups[(first_part+20+1):nrow(annotated_gene_groups),]  -> annotated_gene_groups_2
+
+
 ```
 
 
@@ -290,14 +290,14 @@ annotated_gene_groups[(first_part+1):nrow(annotated_gene_groups),]  -> annotated
 base_size =8
 
 main.title <- "Supplementary Table 1"
-annotated_gene_groups_1 %>% ggtexttable(theme = ttheme('mBlue', base_size = base_size,  padding = unit(c(1.4, 1.4), "mm"))) %>%
-  tab_add_title(text = main.title, face = "bold", padding = unit(.5, "line"), size = 10, hjust = -.03)  %>%
+annotated_gene_groups_1 %>% ggtexttable(rows = NULL,theme = ttheme('mBlue', base_size = base_size,  padding = unit(c(1.4, 1.4), "mm"))) %>%
+  tab_add_title(text = main.title, face = "bold", padding = unit(.5, "line"), size = 10, hjust = .09)  %>%
  tab_add_footnote(text = "(Continued on next page)", size = 8, face = "italic") -> supplementary_gene_table_1_first
 
 
 
 setwd("/DeepenData/Repos/geometric_cobra")
-ggsave("./results/figures/supplementary_gene_table_1_first.png", supplementary_gene_table_1_first, height = 7.7, width = 10.5, bg="white", dpi = 400)
+ggsave("./results/figures/supplementary_gene_table_1_first.png", supplementary_gene_table_1_first, height = 10.5, width = 8, bg="white", dpi = 400)
 ```
 
 
@@ -305,12 +305,12 @@ ggsave("./results/figures/supplementary_gene_table_1_first.png", supplementary_g
 base_size =8
 
 main.title <- "(Continued from previous page)"
-annotated_gene_groups_2 %>% ggtexttable(theme = ttheme('mBlue', base_size = base_size,  padding = unit(c(1.4, 1.4), "mm"))) %>%
-  tab_add_title(text = main.title, face = "bold", padding = unit(.5, "line"), size = 8, hjust = -.03) -> supplementary_gene_table_1_second
+annotated_gene_groups_2 %>% ggtexttable(rows = NULL, theme = ttheme('mBlue', base_size = base_size,  padding = unit(c(1.4, 1.4), "mm"))) %>%
+  tab_add_title(text = main.title, face = "bold", padding = unit(.5, "line"), size = 8, hjust = .07) -> supplementary_gene_table_1_second
 
 
 setwd("/DeepenData/Repos/geometric_cobra")
-ggsave("./results/figures/supplementary_gene_table_1_second.png", supplementary_gene_table_1_second, height = 7.7, width = 10.5, bg="white", dpi = 400)
+ggsave("./results/figures/supplementary_gene_table_1_second.png", supplementary_gene_table_1_second, height = 5, width = 7, bg="white", dpi = 200)
 
 ```
 
