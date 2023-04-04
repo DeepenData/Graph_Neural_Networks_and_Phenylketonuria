@@ -67,6 +67,10 @@ get_transporters_and_reactions(CF_genes) -> FluxConcentration_rxns_and_transps
 setwd("/DeepenData/Repos/geometric_cobra/")
 res <- readRDS("./results/genes/RNA_results.RDS")
 res %>% rownames() -> all_ENSMUST
+```
+
+
+```{r message=FALSE, warning=FALSE}
 #Hs.ensembl       <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
 Mm.ensembl       <- useMart("ensembl",dataset="mmusculus_gene_ensembl")
 temp_1           <- getBM(attributes=c('ensembl_transcript_id','hsapiens_homolog_ensembl_gene'),filters ='ensembl_transcript_id',values =all_ENSMUST, mart = Mm.ensembl)
@@ -76,12 +80,22 @@ temp_2           <- getBM(attributes=c('ensembl_gene_id','hgnc_symbol','entrezge
 
 
 colnames(temp_2)           <- c("hsapiens_ensembl", "hgnc_symbol", "entrezgene_id", 'description')
+```
 
+
+```{r message=FALSE, warning=FALSE}
 inner_join(temp_1, temp_2) -> all_gene_codes
 res['mouse_ensembl_transcript_id'] <- rownames(res)
 
 
 inner_join(as.data.frame(res) ,all_gene_codes ) %>% drop_na() %>% arrange(hgnc_symbol) -> annotated_results
+```
+
+```{r}
+annotated_results %>%  filter(str_detect(description, regex("hydroxybutyrate dehy", ignore_case=T))) %>% filter(padj < 0.01)
+
+annotated_results %>%  filter(str_detect(hgnc_symbol, regex("HMGCR", ignore_case=T))) %>% filter(padj < 0.05)
+
 ```
 
 ```{r}
