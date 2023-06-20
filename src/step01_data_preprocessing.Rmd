@@ -13,10 +13,7 @@ library(readxl)
 ```
 
 Extract healthy patients to make the "control group"
-```{r message=FALSE, warning=FALSE}
-#setwd("/DeepenData/Repos/geometric_cobra")
-#d <- read_csv2("metabolite_raw_data/Base_de_datos_2010_2020_columnas_limpias.csv") %>% rename(Glu = Glt, Tyr = tir)
-```
+
 
 
 ```{r message=FALSE, warning=FALSE}
