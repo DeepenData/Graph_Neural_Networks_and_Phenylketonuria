@@ -23,8 +23,14 @@ setwd("/DeepenData/Repos/geometric_cobra")
 C_genes  <- read_csv( "./results/explanations/to_GraphTools_visualization_explanatory_subgraph_MASKED_GIN_Concentration.csv")    %>%  .[['genes']]  %>% str_extract_all('\\d+(?=\\.)') %>% unlist() %>% unique()
 F_genes  <- read_csv( "./results/explanations/to_GraphTools_visualization_explanatory_subgraph_MASKED_GIN_FLUX.csv")    %>%  .[['genes']]  %>% str_extract_all('\\d+(?=\\.)') %>% unlist() %>% unique()
 CF_genes <- read_csv( "./results/explanations/to_GraphTools_visualization_explanatory_subgraph_MASKED_GIN_Concen_plus_Fluxes.csv")    %>%  .[['genes']]  %>% str_extract_all('\\d+(?=\\.)') %>% unlist() %>% unique()
-#ensembl    <- useMart("ensembl")
-Hs.ensembl <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
+```
+
+
+```{r message=FALSE, warning=FALSE}
+#library(httr)
+#set_config(config(timeout = 90)) 
+
+Hs.ensembl <- useMart("ensembl",dataset="hsapiens_gene_ensembl", host = "useast.ensembl.org")
 ```
 
 
@@ -72,7 +78,7 @@ res %>% rownames() -> all_ENSMUST
 
 ```{r message=FALSE, warning=FALSE}
 #Hs.ensembl       <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
-Mm.ensembl       <- useMart("ensembl",dataset="mmusculus_gene_ensembl")
+Mm.ensembl       <- useMart("ensembl",dataset="mmusculus_gene_ensembl", host = "useast.ensembl.org")
 temp_1           <- getBM(attributes=c('ensembl_transcript_id','hsapiens_homolog_ensembl_gene'),filters ='ensembl_transcript_id',values =all_ENSMUST, mart = Mm.ensembl)
 colnames(temp_1) <- c("mouse_ensembl_transcript_id", "hsapiens_ensembl")
 temp_2           <- getBM(attributes=c('ensembl_gene_id','hgnc_symbol','entrezgene_id','entrezgene_description'), 
