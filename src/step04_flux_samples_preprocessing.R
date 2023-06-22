@@ -1,3 +1,4 @@
+# step04_flux_samples_preprocessing.R
 library(magrittr)
 library(tidyverse)
 
@@ -19,8 +20,13 @@ remove_outliers_patients <- function(df, first_qutl, second_qutl){
     find_out_occurences  -> out_ocurrences
   return(df[!out_ocurrences,])}
 
-flux_samples_CONTROL_20_000.parquet.gzip <- file.path("..", "results", "fluxes", "flux_samples_CONTROL_20_000.parquet.gzip")
-flux_samples_PKU_20_000.parquet.gzip     <- file.path("..", "results", "fluxes", "flux_samples_PKU_20_000.parquet.gzip")
+flux_samples_CONTROL_20_000.parquet.gzip <- file.path(".", "results", "fluxes", "flux_samples_CONTROL_20_000.parquet.gzip")
+flux_samples_PKU_20_000.parquet.gzip     <- file.path(".", "results", "fluxes", "flux_samples_PKU_20_000.parquet.gzip")
 
 flux_samples_CONTROL_10_000 <- arrow::read_parquet(flux_samples_CONTROL_20_000.parquet.gzip) %>% remove_outliers_patients(0.01, .99)
 flux_samples_PKU_10_000 <- arrow::read_parquet(flux_samples_PKU_20_000.parquet.gzip)%>% remove_outliers_patients(0.01, .99)
+# 
+arrow::write_parquet(flux_samples_CONTROL_10_000, "./results/fluxes/CLEANED_flux_samples_CONTROL_20_000.parquet.gzip" ,compression = "gzip")
+arrow::write_parquet(flux_samples_PKU_10_000, "./results/fluxes/CLEANED_flux_samples_PKU_20_000.parquet.gzip",     compression = "gzip")
+# head(flux_samples_PKU_10_000)
+print('done!')
