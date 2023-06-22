@@ -18,7 +18,7 @@ def read_mat_file():
     parent_dir = os.path.dirname(os.getcwd())
 
     # construct the full path of the file
-    file_path = os.path.join(parent_dir, "COBRA_models/GEM_Recon3_thermocurated_redHUMAN_AA.mat")
+    #file_path = os.path.join(parent_dir, "COBRA_models/GEM_Recon3_thermocurated_redHUMAN_AA.mat")
 
     # load the .mat file
     model = load_matlab_model("./COBRA_models/GEM_Recon3_thermocurated_redHUMAN_AA.mat")
