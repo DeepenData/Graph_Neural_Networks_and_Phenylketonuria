@@ -27,4 +27,5 @@ tmp/
 **/*.graphml
 **/*.mat
 **/*.pickle
+**/*.html
 *.Rproj.user
