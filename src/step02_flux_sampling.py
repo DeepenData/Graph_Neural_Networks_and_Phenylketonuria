@@ -61,16 +61,12 @@ def main():
 
     list(map(set_rxn_bounds, regulatory_reactions))
     
-    ##HEALTHY
-    model.reactions.get_by_id("r0399").bounds       = (99, model.optimize().objective_value)
-    model.reactions.get_by_id("PHETHPTOX2").bounds  = (0, 0)
 
 
 
-    optgp = OptGPSampler(model, processes=os.cpu_count(), thinning=1)
-    samples_healthy = ''
-    samples_healthy = optgp.sample(10)
-    print(f"{type(samples_healthy)}")
+    #samples_healthy = ''
+
+    #print(f"{type(samples_healthy)}")
     
     def save_to_parquet(df, file_name):
         # get the parent directory of the current working directory
@@ -83,11 +79,23 @@ def main():
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
         # write DataFrame to a parquet file with gzip compression
-        #df.to_parquet(file_path, compression='gzip')
+        df.to_parquet(file_path, compression='gzip')
         print(file_path)
         
-    save_to_parquet(samples_healthy, 'aa1')
+    ##HEALTHY
+    model.reactions.get_by_id("r0399").bounds       = (99, model.optimize().objective_value)
+    model.reactions.get_by_id("PHETHPTOX2").bounds  = (0, 0)
+    optgp            = OptGPSampler(model, processes=os.cpu_count(), thinning=500)
+    samples_healthy  = optgp.sample(20_000)
+    save_to_parquet(samples_healthy, 'flux_samples_CONTROL_20_000b')
     
+    ##PKU
+    model.reactions.get_by_id("r0399").bounds       = (0, 5)
+    model.reactions.get_by_id("PHETHPTOX2").bounds  = (0, 0)
+    optgp       = OptGPSampler(model, processes=os.cpu_count(), thinning=500)
+    samples_pku = optgp.sample(20_000)
+    save_to_parquet(samples_pku, 'flux_samples_PKU_20_000b')
+
 # call the main function
 if __name__ == "__main__":
     main()

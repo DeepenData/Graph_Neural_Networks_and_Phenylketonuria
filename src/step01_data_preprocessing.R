@@ -7,7 +7,7 @@ library(mixgb)       # for data imputation
 library(readxl)      # for reading excel files
 
 # Define the path of the control group data file
-data_file <- file.path("..", "metabolite_raw_data", "raw_data_to_extract_CONTROLS.csv")
+data_file <- file.path(".", "metabolite_raw_data", "raw_data_to_extract_CONTROLS.csv")
 
 # Load the data from the defined path
 df1 <- read_csv2(data_file) %>% 
@@ -57,7 +57,7 @@ library(readxl)      # for reading excel files
 library(mixgb)       # for data imputation
 
 # Define the path of the data file for PKU patients
-data_xlsx_file <- file.path("..", "metabolite_raw_data", "raw_data_to_extract_PKUs.xlsx")
+data_xlsx_file <- file.path(".", "metabolite_raw_data", "raw_data_to_extract_PKUs.xlsx")
 
 # Load the PKU data from the defined path and remove irrelevant columns
 # '...1' and 'SA' are removed for this particular analysis
@@ -158,7 +158,7 @@ assertthat::assert_that(all(names(PKU_outliers_inputation_done) == names(healthy
 combined_data <- rbind(PKU_outliers_inputation_done, healthy_outliers_inputation_done)
 
 # Define the output file path
-output_file_path <- file.path("..", "processed_data", "metabolites_outliers_removed_and_imputed.parquet.gzip")
+output_file_path <- file.path(".", "processed_data", "metabolites_outliers_removed_and_imputed.parquet.gzip")
 
 # Save the combined data as a parquet file with gzip compression
 arrow::write_parquet(combined_data, output_file_path, compression = "gzip")
