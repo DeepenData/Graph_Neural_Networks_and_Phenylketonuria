@@ -2,28 +2,7 @@
 from acevedo_clss_and_fcns import * 
 from    cobra.io.mat import *
 from networkx.algorithms import bipartite
-def check_Concen_plus_Fluxes(a_graph, mask_mets, mask_rxns):
-    
 
-    assert np.unique(
-        a_graph.x.reshape(len(mask_mets))[mask_mets][
-        a_graph.x.reshape(len(mask_mets))[mask_mets] > 1e-10]).__len__() > 3
-
-    assert np.unique(
-        a_graph.x.reshape(len(mask_mets))[mask_mets][
-            np.invert(
-        a_graph.x.reshape(len(mask_mets))[mask_mets] > 1e-10)]
-        ).__len__() <=2
-
-    assert np.unique(
-        a_graph.x.reshape(len(mask_mets))[mask_mets][
-            np.invert(
-        a_graph.x.reshape(len(mask_mets))[mask_mets] > 1e-10)]
-        ).sum() < 1e-9
-
-    assert np.unique(
-        a_graph.x.reshape(len(mask_mets))[mask_rxns][
-        a_graph.x.reshape(len(mask_mets))[mask_rxns] > 1e-10]).__len__() > 3
 
 
 model = load_matlab_model("./COBRA_models/GEM_Recon3_thermocurated_redHUMAN_AA.mat")
@@ -37,30 +16,16 @@ partition_list =  np.array(list(nx.get_node_attributes(G, "bipartite").values())
 mask_rxns      =  partition_list.astype(bool)
 mask_mets      =  np.invert(partition_list.astype(bool))
 
-def get_a_graph_from_loader(loader):
+# def get_a_graph_from_loader(loader):
     
-    #loader   = loader_only_Concen #torch.load(loader_path)
-    a_batch  = next(iter(loader.get_train_loader()))
-    return a_batch[0]
+#     #loader   = loader_only_Concen #torch.load(loader_path)
+#     a_batch  = next(iter(loader.get_train_loader()))
+#     return a_batch[0]
 
 Concen_plus_Fluxes = get_a_graph_from_loader(torch.load('./results/dataloaders/MASKED_loader_Concen_plus_Fluxes.pt'))
 
 check_Concen_plus_Fluxes(Concen_plus_Fluxes, mask_mets, mask_rxns)
 
-def get_averages(loader):    
-
-    control_list = []
-    pku_list     = []
-
-    for graph in loader.dataset[0:1000]:
-        
-        if graph.y.item() == 0:   
-            control_list.append(graph.x) 
-            
-        elif graph.y.item() == 1:
-            pku_list.append(graph.x) 
-    
-    return torch.cat(control_list, dim=1).mean(axis = 1),  torch.cat(pku_list, dim=1).mean(axis = 1)
 
 
 CONTROL_only_Concen, PKU_only_Concen = get_averages( torch.load('./results/dataloaders/MASKED_loader_only_Concen.pt').get_train_loader())
@@ -168,3 +133,5 @@ mask_fluxes(nx_Flux,"pku",      "pku_FLUX_node_sizes")
 
 nx.write_gexf(nx_Flux, "./results/graphs/for_visualizations/nx_Flux.gexf")
 
+
+# %%

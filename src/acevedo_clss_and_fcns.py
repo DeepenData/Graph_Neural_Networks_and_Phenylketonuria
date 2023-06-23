@@ -68,27 +68,110 @@ import gc
 import tqdm
 from torch_scatter import scatter
 import pandas as pd
-def plot_classsifiers(X, y):
+
+
+
+def get_averages(loader):    
+
+    control_list = []
+    pku_list     = []
+
+    for graph in loader.dataset[0:1000]:
+        
+        if graph.y.item() == 0:   
+            control_list.append(graph.x) 
+            
+        elif graph.y.item() == 1:
+            pku_list.append(graph.x) 
+    
+    return torch.cat(control_list, dim=1).mean(axis = 1),  torch.cat(pku_list, dim=1).mean(axis = 1)
+
+
+def check_Concen_plus_Fluxes(a_graph, mask_mets, mask_rxns):
     
 
-    #clf1 = LogisticRegression()
-    #clf2 = DecisionTreeClassifier()
-    clf3 = RandomForestClassifier()
-    clf4 = SVC(gamma='auto')
-    clf5 = GaussianNB()
-    clf6 = MLPClassifier()
+    assert np.unique(
+        a_graph.x.reshape(len(mask_mets))[mask_mets][
+        a_graph.x.reshape(len(mask_mets))[mask_mets] > 1e-10]).__len__() > 3
 
-    gs = gridspec.GridSpec(3, 2)
-    fig = plt.figure(figsize=(14,7))
-    labels = ['Random Forest', 'SVM', 'Naive Bayes', 'Neural Network']
-    for clf, lab, grd in zip([clf3, clf4, clf5, clf6],
-                            labels,
-                            [(0,0), (0,1), (1,0), (1,1)]):
-        clf.fit(X, y)
-        ax = plt.subplot(gs[grd[0], grd[1]])
-        fig = plot_decision_regions(X=X, y=y, clf=clf, legend=2)
-        plt.title(lab)
-    plt.show()
+    assert np.unique(
+        a_graph.x.reshape(len(mask_mets))[mask_mets][
+            np.invert(
+        a_graph.x.reshape(len(mask_mets))[mask_mets] > 1e-10)]
+        ).__len__() <=2
+
+    assert np.unique(
+        a_graph.x.reshape(len(mask_mets))[mask_mets][
+            np.invert(
+        a_graph.x.reshape(len(mask_mets))[mask_mets] > 1e-10)]
+        ).sum() < 1e-9
+
+    assert np.unique(
+        a_graph.x.reshape(len(mask_mets))[mask_rxns][
+        a_graph.x.reshape(len(mask_mets))[mask_rxns] > 1e-10]).__len__() > 3
+
+def get_a_graph_from_loader(loader):
+    
+    #loader   = loader_only_Concen #torch.load(loader_path)
+    a_batch  = next(iter(loader.get_train_loader()))
+    return a_batch[0]
+
+def make_graphs_list(pyg_graph_in,target_list, mask_target:bool=False, mask_number:float = 1e-10):
+    
+    pyg_graph = copy.deepcopy(pyg_graph_in)
+    graphs_list = []
+    
+    
+    for i in range(pyg_graph.x.shape[1]):
+    
+        
+        new_pyg_data  = Data(x =  pyg_graph.x[:,i].reshape(pyg_graph.num_nodes, 1),  y = pyg_graph.y[i], 
+                            edge_index = pyg_graph.edge_index)
+        new_pyg_data.num_classes = 2
+        
+        
+        if mask_target:
+            for n in target_list:
+                new_pyg_data.x[n,:] = mask_number
+                #new_pyg_data.x[target_node_1,:] = mask_number
+                #new_pyg_data.x[target_node_2,:] = mask_number        
+        
+        graphs_list.append(new_pyg_data) 
+    return graphs_list
+    
+def get_sample_subset(full_samples, concentration_data, label): 
+
+
+    s = concentration_data.label.value_counts()
+    sample_subset = full_samples.sample(s.loc[label], replace=True).reset_index(drop=True)
+    sample_subset["label"] = label
+    
+    return sample_subset
+
+    
+def get_largest_cc(G):
+    
+  largest_wcc = max(nx.connected_components(nx.Graph(G)), key=len)
+
+
+  # Create a subgraph SG based on G
+  SG = G.__class__()
+  SG.add_nodes_from((n, G.nodes[n]) for n in largest_wcc)
+
+
+  SG.add_edges_from((n, nbr, d)
+      for n, nbrs in G.adj.items() if n in largest_wcc
+      for nbr, d in nbrs.items() if nbr in largest_wcc)
+
+  SG.graph.update(G.graph)
+
+  assert G.nodes.__len__() >= SG.nodes.__len__()
+  assert G.edges.__len__() >= SG.edges.__len__()
+  assert SG.nodes.__len__() == len(largest_wcc)
+  assert not SG.is_directed() 
+  assert nx.is_connected(nx.Graph(SG))
+
+  return copy.deepcopy(SG)
     
 def cobra_to_networkx(model, undirected: bool = True):
   S_matrix = create_stoichiometric_matrix(model)
@@ -277,48 +360,7 @@ def train_classifiers_with_dataloader(loader):
     plot_classsifiers(embedding, labels_from_loader.to(int).numpy())
     plt.show()
     
-import torch.nn.functional as F
-class GIN_classifier(torch.nn.Module):
-    
-    def __init__(
-        self, 
-        target_node_idx: int,
-        n_nodes : int, 
-        num_features : int, 
-        out_channels: int = 8,
-        dropout : float = 0.05, 
-        hidden_dim : int = 8, 
-        #heads : int = 5,
-        LeakyReLU_slope : float = 0.01,
-
-        num_layers: int = 4
-    ):
-        super(GIN_classifier, self).__init__() # TODO: why SUPER gato? 
-        self.n_nodes = n_nodes
-        self.dropout = dropout
-        self.num_features = num_features
-        self.target_node_idx = target_node_idx
-        self.out_channels = out_channels
-        
-        self.GIN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
-                               out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False)      
-        
-        self.FC1        = Linear(in_features=out_channels, out_features=1, bias=True)
-        self.FC2        = Linear(in_features=self.n_nodes, out_features=2, bias=True)      
-        self.leakyrelu  = LeakyReLU(LeakyReLU_slope)#.to('cuda')
-    def forward(self, x):
-        data       = x.x 
-        edge_index = x.edge_index
-        batch_size = x.y.shape[0]
-
-        x     = self.GIN_layers(data, edge_index)
-        x     = x.reshape(batch_size, self.n_nodes, self.out_channels)
-        x     = self.FC1(self.leakyrelu(x))
-        x     = x.reshape(batch_size,  self.n_nodes)              
-        x     = self.FC2(self.leakyrelu(x))
-        x     = x.reshape(batch_size, 2)
-        return   torch.nn.functional.log_softmax(x, dim=1).squeeze()
-    
+import torch.nn.functional as F 
 from sklearn.model_selection import train_test_split
 
     
@@ -370,82 +412,7 @@ class batch_loader():
         return  DataLoader(validation_subset, batch_size= self.batch_size, sampler = sampler,  drop_last=True)
     
     
-class GIN_classifier_to_explain(torch.nn.Module):
-    
-    def __init__(
-        self, 
-        batch_size,
-        #target_node_idx: int,
-        n_nodes : int, 
-        num_features : int, 
-        out_channels: int = 8,
-        dropout : float = 0.05, 
-        hidden_dim : int = 8, 
-        LeakyReLU_slope : float = 0.01,
-
-        num_layers: int = 4
-    ):
-        super(GIN_classifier_to_explain, self).__init__() # TODO: why SUPER gato? 
-        self.n_nodes = n_nodes
-        self.dropout = dropout
-        self.num_features = num_features
-        #self.target_node_idx = target_node_idx
-        self.out_channels = out_channels
-        self.batch_size   = batch_size
-        
-        self.GIN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
-                               out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False)      
-        
-        self.FC1        = Linear(in_features=out_channels, out_features=1, bias=True)
-        self.FC2        = Linear(in_features=self.n_nodes, out_features=2, bias=True)      
-        self.leakyrelu  = LeakyReLU(LeakyReLU_slope)#.to('cuda')
-    def forward(self, x, edge_index, batch):
-
-
-        x     = self.GIN_layers(x, edge_index)
-        x     = x.reshape(self.batch_size, self.n_nodes, self.out_channels)
-        x     = self.FC1(self.leakyrelu(x))
-        x     = x.reshape(self.batch_size,  self.n_nodes)              
-        x     = self.FC2(self.leakyrelu(x))
-        x     = x.reshape(self.batch_size, 2)
-        return   torch.nn.functional.log_softmax(x, dim=1).squeeze()
-
-class GIN_classifier_to_explain_v2(torch.nn.Module):
-    
-    def __init__(
-        self, 
-        n_classes: int,
-        n_nodes : int, 
-        num_features : int, 
-        out_channels: int = 8,
-        dropout : float = 0.05, 
-        hidden_dim : int = 8, 
-        LeakyReLU_slope : float = 0.01,
-        num_layers: int = 2
-    ):
-        super(GIN_classifier_to_explain_v2, self).__init__() # TODO: why SUPER gato? 
-        self.n_nodes = n_nodes
-        self.n_classes = n_classes
-        self.dropout = dropout
-        self.num_features = num_features
-        self.out_channels = out_channels
-        self.GIN_layers =  GIN(in_channels= num_features, hidden_channels= hidden_dim, num_layers= num_layers, 
-                               out_channels= out_channels, dropout=dropout,  jk=None, act='LeakyReLU', act_first = False)              
-        self.FC1          = Linear(in_features=out_channels, out_features=1, bias=True)
-        self.FC2          = Linear(in_features= self.n_nodes, out_features=self.n_classes, bias=True)
-        #self.FC          = Linear(in_features=out_channels, out_features=1, bias=True)           
-           
-        self.leakyrelu  = LeakyReLU(LeakyReLU_slope)#.to('cuda')
-    def forward(self, x, edge_index, batch):
-        batch_size = batch.unique().__len__()
-
-        x     = self.GIN_layers(x, edge_index)
-        x     = x.reshape(batch_size, self.n_nodes, self.out_channels)
-        x     = self.FC1(self.leakyrelu(x))
-        x     = x.reshape(batch_size,  self.n_nodes)       
-        x     = self.FC2(self.leakyrelu(x))    
-
-        return torch.nn.functional.log_softmax(x, dim=1)
+# return torch.nn.functional.log_softmax(x, dim=1)
     
 from torch_geometric.nn.models import GIN
 from torch_geometric.nn.models import GAT
@@ -506,7 +473,7 @@ class my_GNN(torch.nn.Module):
         return torch.nn.functional.log_softmax(x, dim=1)
     
     
-def train_one_epoch(modelo: GIN_classifier_to_explain_v2,
+def train_one_epoch(modelo,
                     optimizer, 
                     train_loader: torch_geometric.loader.dataloader.DataLoader,
                     loss_fun: torch.nn.modules.loss,
@@ -531,7 +498,7 @@ def train_one_epoch(modelo: GIN_classifier_to_explain_v2,
 
     return correct / len(train_loader.dataset)
 
-def validate(modelo: GIN_classifier_to_explain_v2, loader: DataLoader, device: str = 'cpu'):
+def validate(modelo, loader: DataLoader, device: str = 'cpu'):
     modelo.eval()
     correct = 0
     for i, val_data in enumerate(loader):

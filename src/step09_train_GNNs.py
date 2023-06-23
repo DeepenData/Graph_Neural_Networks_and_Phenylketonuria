@@ -7,7 +7,7 @@ if torch.cuda.is_available():
         device = 'cuda:0'
 print(f"{device = }")
 
-epochs = 35
+epochs = 3 #35
 
 
 GCN_masked_flux                          =   train_and_validate(gnn_type = "GCN", mask = True, flux = True, concentration = False,
@@ -66,3 +66,4 @@ import pickle
 
 with open('./results/training_validation_best_models_paths/training_results.pickle', 'wb') as handle:
     pickle.dump(training_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# %%
