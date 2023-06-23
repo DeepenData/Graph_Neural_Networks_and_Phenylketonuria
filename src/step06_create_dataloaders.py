@@ -1,31 +1,6 @@
 #%%
 from acevedo_clss_and_fcns import *
 
-
-def make_graphs_list(pyg_graph_in,target_list, mask_target:bool=False, mask_number:float = 1e-10):
-    
-    pyg_graph = copy.deepcopy(pyg_graph_in)
-    graphs_list = []
-    
-    
-    for i in range(pyg_graph.x.shape[1]):
-    
-        
-        new_pyg_data  = Data(x =  pyg_graph.x[:,i].reshape(pyg_graph.num_nodes, 1),  y = pyg_graph.y[i], 
-                            edge_index = pyg_graph.edge_index)
-        new_pyg_data.num_classes = 2
-        
-        
-        if mask_target:
-            for n in target_list:
-                new_pyg_data.x[n,:] = mask_number
-                #new_pyg_data.x[target_node_1,:] = mask_number
-                #new_pyg_data.x[target_node_2,:] = mask_number        
-        
-        graphs_list.append(new_pyg_data) 
-    return graphs_list
-
-
 grafo_nx   = nx.read_gpickle( "./results/graphs/NX_recon_graph.gpickle")
 phe_L_c    = list(grafo_nx.nodes).index('phe_L_c')
 tyr_L_c    = list(grafo_nx.nodes).index('tyr_L_c')
@@ -58,11 +33,7 @@ loader_only_Concen                 = batch_loader(graphs_list_PYG_graph_only_Con
 loader_only_Fluxes                 = batch_loader(graphs_list_PYG_graph_only_Fluxes, batch_size= 4*32, validation_percent = .4)
 loader_Concen_plus_Fluxes          = batch_loader(graphs_list_PYG_graph_Concen_plus_Fluxes, batch_size= 4*32, validation_percent = .4)
 
-def get_a_graph_from_loader(loader):
-    
-    #loader   = loader_only_Concen #torch.load(loader_path)
-    a_batch  = next(iter(loader.get_train_loader()))
-    return a_batch[0]
+
 
 
 x_loader_only_Concen = get_a_graph_from_loader(loader_only_Concen)

@@ -7,12 +7,10 @@ model                 = load_matlab_model("./COBRA_models/GEM_Recon3_thermocurat
 flux_samples_CONTROL  = pd.read_parquet("./results/fluxes/CLEANED_flux_samples_CONTROL_20_000.parquet.gzip")#.abs()
 flux_samples_PKU      = pd.read_parquet("./results/fluxes/CLEANED_flux_samples_PKU_20_000.parquet.gzip")#.abs()
 
-# %%
+
 concentration_data = pd.read_parquet("./processed_data/augmented_balanced_metabolite_data.parquet.gzip").abs()
 feature_names       = pd.read_csv("./metabolite_raw_data/metabolite_names.csv")
 grafo_nx            = cobra_to_networkx(model)
-# %%
-
 
 concentration_data['Leu'] = concentration_data['Leu.Ile']
 concentration_data['Ile'] = concentration_data['Leu.Ile']
@@ -45,17 +43,6 @@ assert 1 == np.unique(list(nx.get_edge_attributes(grafo_nx, "weight").values()))
 
 
 
-def get_sample_subset(full_samples, concentration_data, label): 
-
-
-    s = concentration_data.label.value_counts()
-    sample_subset = full_samples.sample(s.loc[label], replace=True).reset_index(drop=True)
-    sample_subset["label"] = label
-    
-    return sample_subset
-
-
-
 flux_samples_CONTROL = get_sample_subset(flux_samples_CONTROL, concentration_data, 0)
 flux_samples_PKU     = get_sample_subset(flux_samples_PKU,     concentration_data, 1)
 assert flux_samples_CONTROL.r0399.max() > 20 
@@ -71,31 +58,6 @@ assert len(concentration_data) == len(flux_samples)
 assert flux_samples.r0399.loc[flux_samples.label == 0].mean() > 20
 
 assert flux_samples.r0399.loc[flux_samples.label == 1].mean() < 4
-
-def get_largest_cc(G):
-    
-  largest_wcc = max(nx.connected_components(nx.Graph(G)), key=len)
-
-
-  # Create a subgraph SG based on G
-  SG = G.__class__()
-  SG.add_nodes_from((n, G.nodes[n]) for n in largest_wcc)
-
-
-  SG.add_edges_from((n, nbr, d)
-      for n, nbrs in G.adj.items() if n in largest_wcc
-      for nbr, d in nbrs.items() if nbr in largest_wcc)
-
-  SG.graph.update(G.graph)
-
-  assert G.nodes.__len__() >= SG.nodes.__len__()
-  assert G.edges.__len__() >= SG.edges.__len__()
-  assert SG.nodes.__len__() == len(largest_wcc)
-  assert not SG.is_directed() 
-  assert nx.is_connected(nx.Graph(SG))
-
-  return copy.deepcopy(SG)
-
 
 mets = ['nad_', 'nadh_', "nadp_", "nadph_", "adp_", "atp_", "gdt_", "gtp_",
         "pi_", "ppi_", "pppi_", "co2_", "hco3_", "h2o_", "h2o2_", "h_", "o2_", "oh1_",
@@ -113,7 +75,6 @@ grafo_nx = get_largest_cc(grafo_nx)
     
 nx.write_gpickle(grafo_nx, "./results/graphs/NX_recon_graph.gpickle")
 
-# %%
 concentration_data = concentration_data.sort_values(by=['label'])
 concentration_data.reset_index(drop=True, inplace=True)
 flux_samples = flux_samples.sort_values(by=['label'])
@@ -297,6 +258,7 @@ assert np.unique(
 torch.save(pyg_graph_onlyConcen, "./results/graphs/PYG_graph_only_Concen.pt")
 torch.save(pyg_graph_onlyFluxes, "./results/graphs/PYG_graph_only_Fluxes.pt")
 torch.save(pyg_graph_Concen_plus_Fluxes, "./results/graphs/PYG_graph_Concen_plus_Fluxes.pt")
+
 
 
 # %%
