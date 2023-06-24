@@ -12,8 +12,6 @@ The repository has the following directory structure:
 |   |-- step02_classes_balancing_via_oversampling.py
 |   |-- step03_flux_sampling.py
 |   |-- step04_flux_samples_preprocessing.R
-|-- results
-|-- data
 ```
 
 - The `src` directory contains all the scripts that constitute the PKU metabolic modeling pipeline.
