@@ -29,4 +29,5 @@ tmp/
 **/*.pickle
 **/*.html
 **/*.RDS
+**/**/*.RDS
 *.Rproj.user
