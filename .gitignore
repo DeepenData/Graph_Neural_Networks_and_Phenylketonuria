@@ -1,5 +1,6 @@
 tmp/
 results/
+results/genes/
 **/*.png
 **/*.svg
 **/*.pdf   
