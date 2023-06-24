@@ -547,40 +547,103 @@ from torch_geometric.nn.models import GIN, GAT, GCN
 
 class batch_loader():
     def __init__(self, graphs: list, batch_size: int = 32, num_samples: int = None, validation_percent: float = .3):
-        """Initialize the batch loader with graphs, batch size, num_samples, and validation percentage."""
+        """
+        Initializes the batch loader.
+
+        Args:
+        graphs: list - The list of graphs to be processed by the batch loader.
+        batch_size: int - The size of the batch that the loader will provide.
+        num_samples: int - The number of samples to be used.
+        validation_percent: float - The percentage of the data to be used for validation.
+        """
+
+        # Save the provided parameters
         self.graphs = graphs
         self.batch_size = batch_size
         self.num_samples = num_samples
         self.validation_percent = validation_percent
 
-        # Split data into train, validation, and test indices
+        # Split data into training, validation, and testing indices
         self.train_idxs, self.sub_idxs = train_test_split(range(len(self.graphs)), test_size=self.validation_percent)
         self.val_idxs, self.test_idxs = train_test_split(self.sub_idxs, test_size=self.validation_percent)
 
+
     def _get_dataloader(self, idxs):
-        """Helper function to create a data loader."""
+        """
+        Private helper function to create a data loader for a given set of indices.
+
+        Args:
+        idxs: list - The list of indices for which a data loader will be created.
+
+        Returns:
+        DataLoader - The created data loader.
+        """
+
+        # Get the subset of graphs based on the provided indices
         subset = [self.graphs[i] for i in idxs]
+        
+        # Create a random sampler for the subset
         sampler = RandomSampler(subset, replacement=False)
+        
+        # Return a data loader for the subset of graphs
         return DataLoader(subset, batch_size=self.batch_size, sampler=sampler, drop_last=True)
 
+
     def get_train_loader(self):
-        """Return a data loader for training data."""
+        """
+        Creates and returns a data loader for the training data.
+
+        Returns:
+        DataLoader - The data loader for the training data.
+        """
+
         return self._get_dataloader(self.train_idxs)
 
     def get_validation_loader(self):
-        """Return a data loader for validation data."""
+        """
+        Creates and returns a data loader for the validation data.
+
+        Returns:
+        DataLoader - The data loader for the validation data.
+        """
+
         return self._get_dataloader(self.val_idxs)
 
     def get_test_loader(self):
-        """Return a data loader for test data."""
+        """
+        Creates and returns a data loader for the testing data.
+
+        Returns:
+        DataLoader - The data loader for the testing data.
+        """
+
         return self._get_dataloader(self.test_idxs)
 
 
 class my_GNN(torch.nn.Module):
+    """
+    A PyTorch Module that defines a custom Graph Neural Network (GNN).
+    """
     def __init__(self, model: str, n_classes: int, n_nodes: int, num_features: int, out_channels: int = 8,
                  dropout: float = 0.05, hidden_dim: int = 8, LeakyReLU_slope: float = 0.01, num_layers: int = 1):
-        """Initialize the GNN model."""
+        """
+        Constructor of the my_GNN class.
+
+        Args:
+        model: str - The type of GNN layer to be used ("GCN", "GAT" or "GIN").
+        n_classes: int - The number of output classes.
+        n_nodes: int - The number of nodes in the graph.
+        num_features: int - The number of features per node.
+        out_channels: int - The number of output channels (default: 8).
+        dropout: float - Dropout rate (default: 0.05).
+        hidden_dim: int - The number of hidden units (default: 8).
+        LeakyReLU_slope: float - Negative slope coefficient for LeakyReLU activation function (default: 0.01).
+        num_layers: int - The number of GNN layers (default: 1).
+        """
+
         super(my_GNN, self).__init__()
+
+        # Initialize class attributes
         self.n_nodes = n_nodes
         self.n_classes = n_classes
         self.dropout = dropout
@@ -588,7 +651,7 @@ class my_GNN(torch.nn.Module):
         self.out_channels = out_channels
         self.model = model
 
-        # Create the GNN layers based on the specified model type
+        # Define the GNN layers based on the chosen model type
         if self.model == "GCN":
             self.GNN_layers = GCN(in_channels=num_features, hidden_channels=hidden_dim, num_layers=num_layers,
                                   out_channels=out_channels, dropout=dropout, jk=None, act='LeakyReLU', act_first=False)
@@ -599,30 +662,43 @@ class my_GNN(torch.nn.Module):
             self.GNN_layers = GIN(in_channels=num_features, hidden_channels=hidden_dim, num_layers=num_layers,
                                   out_channels=out_channels, dropout=dropout, jk=None, act='LeakyReLU', act_first=False)
 
-        # Create linear layers for output
-        self.FC1 = Linear(in_features=out_channels, out_features=1, bias=True)
-        self.FC2 = Linear(in_features=self.n_nodes, out_features=self.n_classes, bias=True)
+        # Define linear layers for output
+        self.FC1 = torch.nn.Linear(in_features=out_channels, out_features=1, bias=True)
+        self.FC2 = torch.nn.Linear(in_features=self.n_nodes, out_features=self.n_classes, bias=True)
 
-        # Create activation function
-        self.leakyrelu = LeakyReLU(LeakyReLU_slope)
+        # Define activation function
+        self.leakyrelu = torch.nn.LeakyReLU(LeakyReLU_slope)
 
     def forward(self, x, edge_index, batch):
-        """Define the forward pass of the model."""
+        """
+        Defines the forward pass of the model.
+
+        Args:
+        x: The node feature matrix.
+        edge_index: The edge index list.
+        batch: A tensor that assigns each node to a specific example.
+
+        Returns:
+        The output of the model after applying log softmax activation.
+        """
+
+        # Get the number of graphs in the batch
         batch_size = batch.unique().__len__()
 
-        # Pass data through GNN layers
+        # Pass node features and edge index through the GNN layers
         x = self.GNN_layers(x, edge_index)
 
-        # Reshape and pass through first linear layer
+        # Reshape output and pass through the first linear layer followed by a LeakyReLU activation
         x = x.reshape(batch_size, self.n_nodes, self.out_channels)
         x = self.FC1(self.leakyrelu(x))
 
-        # Reshape and pass through second linear layer
+        # Reshape output and pass through the second linear layer followed by a LeakyReLU activation
         x = x.reshape(batch_size, self.n_nodes)
         x = self.FC2(self.leakyrelu(x))
 
-        # Apply log softmax activation to the output
+        # Apply log softmax activation to the output and return
         return torch.nn.functional.log_softmax(x, dim=1)
+
 
 def train_one_epoch(model,
                     optimizer, 
@@ -698,39 +774,42 @@ def validate(model, loader: DataLoader, device: str = 'cpu'):
 
 import os
 
-def train_and_validate(gnn_type, mask, flux, concentration, loader_path , EPOCHS, save, verbose, saving_folder, device:str="cuda"):
+def train_and_validate(gnn_type, mask, flux, concentration, loader_path, EPOCHS, save, verbose, saving_folder, device:str="cuda"):
+    """
+    Trains and validates a Graph Neural Network (GNN) model.
 
-    """Train and validate the model.
-    
     Args:
-    gnn_type: The type of GNN to use.
-    mask, flux, concentration: Flags to specify what data to use.
-    loader_path: Path to the DataLoader.
-    EPOCHS: The number of epochs to train for.
-    save: Whether to save the model.
-    verbose: Whether to print detailed output.
-    saving_folder: The folder in which to save the model.
-    device: The device on which to run the computations.
+    gnn_type: str - The type of GNN layer to be used ("GCN", "GAT" or "GIN").
+    mask, flux, concentration: bool - Flags to specify the types of data to use.
+    loader_path: str - Path to the DataLoader.
+    EPOCHS: int - The number of epochs to train for.
+    save: bool - Whether to save the model after training.
+    verbose: bool - Whether to print detailed output during training.
+    saving_folder: str - The directory path where to save the trained model.
+    device: str - The device to run the computations ("cuda" or "cpu").
 
     Returns:
-    The path of the saved model, the training accuracies for each epoch, and the validation accuracies for each epoch.
+    model_path: str - The path where the model was saved.
+    all_train_accuracy_: list - A list of training accuracies for each epoch.
+    all_validation_accuracy_: list - A list of validation accuracies for each epoch.
     """
 
-    # Check that loader_path corresponds to the right data
+    # Assert that the correct data loader is used based on the data flags
     if mask and flux and not concentration:
         assert "MASKED_loader_only_Fluxes.pt" == os.path.basename(loader_path)
     elif mask and not flux and concentration:
         assert "MASKED_loader_only_Concen.pt" == os.path.basename(loader_path)
     elif mask and  flux and concentration:
-        assert "MASKED_loader_Concen_plus_Fluxes.pt" == os.path.basename(loader_path)  
+        assert "MASKED_loader_Concen_plus_Fluxes.pt" == os.path.basename(loader_path)
 
-    # Load data
+    # Load the data
     loader = torch.load(loader_path)
 
+    # Grab a sample batch to initialize the model based on the input sizes
     a_batch = next(iter(loader.get_train_loader()))
     a_graph = a_batch[0]
 
-    # Initialize model
+    # Initialize the GNN model
     model = my_GNN(model=gnn_type,
                    n_nodes=a_graph.num_nodes,
                    num_features=a_graph.num_node_features,
@@ -738,108 +817,175 @@ def train_and_validate(gnn_type, mask, flux, concentration, loader_path , EPOCHS
                    hidden_dim=8,
                    num_layers=1).to(device, non_blocking=True)
 
-    # Initialize optimizer and loss function
+    # Initialize the optimizer and loss function
     optimizer = torch.optim.Adam(model.parameters())
     loss_function = torch.nn.NLLLoss()
 
-    # Free up memory
+    # Free up GPU memory
     gc.collect()
-    torch.cuda.empty_cache() 
+    torch.cuda.empty_cache()
 
-    # Keep track of accuracies and best model
+    # List to keep track of accuracies per epoch
     all_train_accuracy_ = []
     all_validation_accuracy_ = []
+    
+    # Track the best model and accuracy on validation set
     best_validation_accuracy = 1e-10
     best_val_model = None
 
+    # Loop over each epoch
     for epoch in tqdm.tqdm(range(EPOCHS)):
-
-        # Train and validate for one epoch
-        train_accuracy = train_one_epoch(model, optimizer, loader.get_train_loader(), loss_fun=loss_function, device=device)
-        validation_accuracy = validate(model, loader.get_validation_loader(), device=device)
+        # Train the model for one epoch and get training accuracy
+        train_accuracy = train_one_epoch(model, optimizer, loader.get_train_loader(), loss_function, device=device)
         
-        # Keep track of accuracies
+        # Validate the model and get validation accuracy
+        validation_accuracy = validate(model, loader.get_validation_loader(), device=device)
+
+        # Store the accuracies
         all_train_accuracy_.append(train_accuracy)
         all_validation_accuracy_.append(validation_accuracy)
 
-        # Check if this is the best model so far
+        # Check if this is the best model so far based on validation accuracy
         if validation_accuracy > best_validation_accuracy:
             best_validation_accuracy = validation_accuracy
-            best_val_model = copy.deepcopy(model)  # Update best model
+            best_val_model = copy.deepcopy(model)
 
-        # Print and save, if necessary
+        # If verbose is true, print training and validation results after every epoch
         if verbose:
             print(f'Epoch: {epoch:03d}, train_accuracy: {train_accuracy:.4f}, best_validation_accuracy: {best_validation_accuracy:.4f}')
+            
+            # If save is true and the model is the best so far, save the model
             if save and validation_accuracy == best_validation_accuracy:
                 model_path = os.path.join(saving_folder, f'Model_{epoch}_best_ValAcc_{best_validation_accuracy:.4f}.pt')
                 torch.save(best_val_model, model_path)
                 print(f"Model saved as {model_path}")
 
+    # Return the path of the best model and the accuracies for each epoch
     return model_path, all_train_accuracy_, all_validation_accuracy_
 
 
 
+
 from sklearn.metrics import roc_curve, auc
-
-
+import numpy as np
 
 def get_ROC_parameters(model, test_loader, device:str="cuda"):
+    """
+    This function is used to calculate parameters needed for creating a ROC (Receiver Operating Characteristic) curve.
+    A ROC curve is a graphical plot that illustrates the diagnostic ability of a binary classifier system.
+    
+    Args:
+    model: The model used for making predictions on the data.
+    test_loader: DataLoader which provides the test data in batches.
+    device: Device where the computations will be performed, default is 'cuda' indicating computations are GPU-based.
 
-    tprs            = []
-    aucs = []
-    base_fpr = np.linspace(0, 1, 101)
-    for i, test_data in enumerate(test_loader):
+    Returns:
+    The function returns the False Positive Rates (FPR), True Positive Rates (TPR), and AUC (Area Under Curve) statistics.
+    """
+    tprs = []  # to store true positive rates
+    aucs = []  # to store area under curve values
+    base_fpr = np.linspace(0, 1, 101)  # base False Positive Rate for ROC curve interpolation
+
+    for i, test_data in enumerate(test_loader):  # for each batch in test_loader
             
+        # Ensure the data is not already on GPU to avoid redundant GPU memory usage
         assert not test_data.is_cuda
-        if (device == 'cuda:0') | (device == 'cuda'):
+
+        # If computations are GPU-based, move the data to GPU
+        if device in ['cuda:0', 'cuda']:
             test_data.to(device, non_blocking=True) 
+
+            # Ensure data was successfully moved to GPU
             assert test_data.is_cuda                          
 
-        test_predictions = model(test_data.x, test_data.edge_index,  test_data.batch)# Make predictions for this batch
-        pred            = test_predictions.argmax(dim=1)
-        y_batch         = test_data.y
-        
+        # The model makes predictions for this batch
+        test_predictions = model(test_data.x, test_data.edge_index, test_data.batch)
+
+        # Get the class with highest probability for each prediction
+        pred = test_predictions.argmax(dim=1)
+        y_batch = test_data.y  # true labels for the test batch
+
+        # Convert the predicted and true labels to list format and calculate the ROC curve
         y_pred_tag = pred.squeeze().cpu().int().tolist()
-        y_true     = y_batch.squeeze().cpu().int().tolist()
+        y_true = y_batch.squeeze().cpu().int().tolist()
         fpr, tpr, _ = roc_curve(y_true, y_pred_tag)
-        roc_auc = auc(fpr, tpr)
+        roc_auc = auc(fpr, tpr)  # calculate the area under the ROC curve
         aucs.append(roc_auc)
+
+        # Interpolate TPR to create a continuous ROC curve
         tpr = np.interp(base_fpr, fpr, tpr)
         tpr[0] = 0.0
         tprs.append(tpr)
 
-
+    # Calculate the mean and standard deviation of TPR and AUC
     tprs = np.array(tprs)
     mean_tprs = tprs.mean(axis=0)
-    mean_auc = auc(base_fpr, mean_tprs)
-    std_auc = np.std(aucs)
+    mean_auc = auc(base_fpr, mean_tprs)  # calculate the mean AUC
+    std_auc = np.std(aucs)  # calculate the standard deviation of AUC
 
-
+    # Define upper and lower bounds for TPR for the ROC curve
     tprs_upper = np.minimum(mean_tprs + tprs.std(axis=0), 1)
     tprs_lower = mean_tprs - tprs.std(axis=0)
     
+    # Return ROC curve parameters
     return base_fpr, mean_tprs, tprs_lower, tprs_upper, mean_auc, std_auc
 
-def put_ROC_in_subplot(base_fpr, mean_tprs, tprs_lower,
-                   tprs_upper, mean_auc, std_auc, AX, xlabel:str='', letter:str=''):
-    
-    AX.plot(base_fpr, mean_tprs, 'b', alpha = 0.8, label=r'Test set ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),)
-    AX.fill_between(base_fpr, tprs_lower, tprs_upper, color = 'blue', alpha = 0.2)
-    AX.plot([0, 1], [0, 1], linestyle = '--', lw = 2, color = 'r', label = 'Random', alpha= 0.8)
 
-    #ax1.plot(fpr, tpr, lw=1, alpha=0.6, label='ROC fold %d (AUC = %0.2f)' % (i, roc_auc), c = colors[i])
+def put_ROC_in_subplot(base_fpr, mean_tprs, tprs_lower, tprs_upper, mean_auc, std_auc, AX, xlabel:str='', letter:str=''):
+    """
+    This function plots a ROC (Receiver Operating Characteristic) curve in a given subplot (Axes).
 
+    Args:
+    base_fpr, mean_tprs, tprs_lower, tprs_upper, mean_auc, std_auc: Parameters for the ROC curve.
+    AX: The Axes object on which the ROC curve will be plotted.
+    xlabel: Label for the x-axis of the plot.
+    letter: The title for the subplot.
+    """
+    # Plot the mean ROC curve
+    AX.plot(base_fpr, mean_tprs, 'b', alpha=0.8, label=r'Test set ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc))
+
+    # Fill the area between the upper and lower bounds of TPRs with color to indicate variability
+    AX.fill_between(base_fpr, tprs_lower, tprs_upper, color='blue', alpha=0.2)
+
+    # Plot a diagonal dashed line to represent a random classifier
+    AX.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r', label='Random', alpha=0.8)
+
+    # Add legend, labels and title to the plot
     AX.legend(loc="lower right", fontsize=7.5)
-    AX.set_ylabel('True Positive Rate')
+    AX.set_ylabel('True Positive Rate')  # the y-axis represents TPR
     AX.set_xlabel(xlabel)
-    AX.set_title(letter, fontsize = 12,  fontweight ="bold", loc='left')
-    
+    AX.set_title(letter, fontsize=12, fontweight="bold", loc='left')
+
     
 def put_Learning_curve(all_train_accuracy, all_validation_accuracy, AX, letter):
+    """
+    This function plots the learning curve for the model, which shows the change in accuracy over the epochs.
+    It provides a visual representation of the model's learning progress.
+    
+    Args:
+    all_train_accuracy: A list containing the accuracy values for each epoch on the training set.
+    all_validation_accuracy: A list containing the accuracy values for each epoch on the validation set.
+    AX: The Axes object on which the learning curve will be plotted.
+    letter: The title for the subplot.
+    """
+    
+    # Plot the training set accuracy using a dashed line
     AX.plot(all_train_accuracy,  label = "Train set", linestyle="--")
+    
+    # Plot the validation set accuracy using a solid line
     AX.plot(all_validation_accuracy,  label = "Validation set", linestyle="-")
+    
+    # Display a legend explaining which line represents which data set
     AX.legend(loc="lower right", fontsize=11)
+    
+    # Set the y-axis label as 'Accuracy (%)'. This axis shows the accuracy of the model in percentage.
     AX.set_ylabel('Accuracy (%)')
+    
+    # Set the x-axis label as 'Epochs'. This axis represents the number of complete passes through the entire training dataset.
     AX.set_xlabel("Epochs")
+    
+    # Set the y-axis limits to visualize the plot between 40% to 110% accuracy for clear observation
     AX.set_ylim(0.4, 1.1)
+    
+    # Set the title of the subplot
     AX.set_title(letter, fontsize = 12,  fontweight ="bold", loc='left')

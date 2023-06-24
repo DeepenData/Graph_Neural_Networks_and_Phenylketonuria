@@ -1,16 +1,67 @@
-# Load the required libraries
-library(tidyverse)   # for data manipulation and visualization
-library(magrittr)    # for pipe operators
-library(ggbeeswarm)  # for scatter plot with non-overlapping points
-library(ggpubr)      # for creating publication ready plots
-library(mixgb)       # for data imputation
-library(readxl)      # for reading excel files
+# ---------------------------------------------------------------------
+# 1. LIBRARY IMPORTS
+# ---------------------------------------------------------------------
 
-# Define the path of the control group data file
-data_file <- file.path(".", "metabolite_raw_data", "raw_data_to_extract_CONTROLS.csv")
+# Load the required libraries
+library(tidyverse)   # For data manipulation and visualization
+library(magrittr)    # For pipe operators
+library(ggbeeswarm)  # For scatter plot with non-overlapping points
+library(ggpubr)      # For creating publication ready plots
+library(mixgb)       # For data imputation
+library(readxl)      # For reading Excel files
+
+# ---------------------------------------------------------------------
+# 2. FUNCTIONS
+# ---------------------------------------------------------------------
+
+# Function to check whether a row contains the term "out"
+check_in <- function(a_row) {
+  return("out" %in% a_row) 
+}
+
+# Function to find occurrence of "out" in a dataframe
+find_out_occurences <- function(df) {
+  return(sapply(as.list(as.data.frame(t(df))), check_in) %>% as.vector())
+}
+
+# Function to replace outliers in a column with "out"
+outliers_to_str <- function(a_col, first_qutl, second_qutl) {
+  Q1 <- quantile(a_col, first_qutl, names = FALSE, na.rm = TRUE)
+  Q3 <- quantile(a_col, second_qutl, names = FALSE, na.rm = TRUE)
+  INTER <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * INTER
+  upper_bound <- Q3 + 1.5 * INTER
+  a_col[a_col < lower_bound | a_col > upper_bound] <- "out"
+  return(a_col)
+}
+
+# Function to remove outliers from a dataset
+remove_outliers_patients <- function(df, first_qutl, second_qutl) {
+  df %>% 
+    select(-c(Phe)) %>%  # Exclude 'Phe' column from outlier detection
+    mutate_all(outliers_to_str, first_qutl, second_qutl) %>%  # Replace outliers with "out" in all columns
+    find_out_occurences -> out_ocurrences  # Identify rows containing "out"
+  return(df[!out_ocurrences, ])  # Return the dataframe excluding rows with "out"
+}
+
+# Function to impute missing data using the mixgb method
+impute_data_with_mixgb <- function(df) {
+  for_mixgb <- data_clean(df)  # Clean the data prior to imputation
+  names(for_mixgb) <- make.names(colnames(for_mixgb))  # Make column names suitable for 'mixgb'
+  imputed.data <- mixgb(data = for_mixgb, m = 1, nthread = 20, pmm.k = 10, initial.num = 'median')  # Perform imputation
+  imputed_data <- imputed.data[[1]] %>% as.data.frame()  # Convert the result to dataframe
+  return(imputed_data)  # Return the imputed data
+}
+
+# ---------------------------------------------------------------------
+# 3. DATA LOADING AND CLEANING
+# ---------------------------------------------------------------------
+# # Load and clean the CONTROL data
+# Define the path of the data files of control patients
+data_file_controls <- file.path(".", "metabolite_raw_data", "raw_data_to_extract_CONTROLS.csv")
 
 # Load the data from the defined path
-df1 <- read_csv2(data_file) %>% 
+df1 <- read_csv2(data_file_controls) %>% 
   # Rename the columns 'Glt' and 'tir' to 'Glu' and 'Tyr' for better readability
   rename(Glu = Glt, Tyr = tir) %>%  
   # Select all columns except 'SA'
@@ -50,18 +101,13 @@ healthy_numeric <- healthy %>%
   # Select columns that are of type double
   select_if(is_double)
 
-# Load the required libraries
-library(tidyverse)   # for data manipulation and visualization
-library(magrittr)    # for pipe operators
-library(readxl)      # for reading excel files
-library(mixgb)       # for data imputation
-
+# # Load and clean the PKU data
 # Define the path of the data file for PKU patients
-data_xlsx_file <- file.path(".", "metabolite_raw_data", "raw_data_to_extract_PKUs.xlsx")
+data_xlsx_file_PKUs <- file.path(".", "metabolite_raw_data", "raw_data_to_extract_PKUs.xlsx")
 
 # Load the PKU data from the defined path and remove irrelevant columns
 # '...1' and 'SA' are removed for this particular analysis
-df1_pku <- read_excel(data_xlsx_file) %>% 
+df1_pku <- read_excel(data_xlsx_file_PKUs) %>% 
   select(-c("...1", "SA"))  
 
 # Preprocess the PKU data
@@ -86,53 +132,10 @@ to_drop <- c("Paciente_PKU", "COMUNA", "REGION", "Condicion", "RUT", "Fecha.entr
 PKU_numeric <- PKU %>% 
   select(-c(to_drop)) %>% 
   select_if(is_double)
+# # ---------------------------------------------------------------------
+# # 4. DATA PROCESSING
+# # ---------------------------------------------------------------------
 
-# Function to check whether a row contains the term "out"
-# Used for identifying outliers in the data
-check_in <- function(a_row) {
-  return("out" %in% a_row) 
-}
-
-# Function to find occurrence of "out" in a dataframe
-# Returns a boolean vector with 'TRUE' for rows that contain "out" and 'FALSE' otherwise
-find_out_occurences <- function(df) {
-  return(sapply(as.list(as.data.frame(t(df))), check_in) %>% as.vector())
-}
-
-# Function to replace outliers in a column with "out"
-# Uses the Interquartile Range (IQR) method to identify outliers
-outliers_to_str <- function(a_col, first_qutl, second_qutl) {
-  Q1 <- quantile(a_col, first_qutl, names = FALSE, na.rm = TRUE)
-  Q3 <- quantile(a_col, second_qutl, names = FALSE, na.rm = TRUE)
-  INTER <- Q3 - Q1
-  lower_bound <- Q1 - 1.5 * INTER
-  upper_bound <- Q3 + 1.5 * INTER
-  a_col[a_col < lower_bound | a_col > upper_bound] <- "out"
-  return(a_col)
-}
-
-# Function to remove outliers from a dataset
-# Works by first replacing outliers with "out", then removes rows containing "out"
-remove_outliers_patients <- function(df, first_qutl, second_qutl) {
-  df %>% 
-    select(-c(Phe)) %>%  # Exclude 'Phe' column from outlier detection
-    mutate_all(outliers_to_str, first_qutl, second_qutl) %>%  # Replace outliers with "out" in all columns
-    find_out_occurences -> out_ocurrences  # Identify rows containing "out"
-  return(df[!out_ocurrences, ])  # Return the dataframe excluding rows with "out"
-}
-
-# Function to impute missing data using the mixgb method
-# 'mixgb' is a method that uses multiple imputation and gradient boosting for handling missing data
-impute_data_with_mixgb <- function(df) {
-  for_mixgb <- data_clean(df)  # Clean the data prior to imputation
-  names(for_mixgb) <- make.names(colnames(for_mixgb))  # Make column names suitable for 'mixgb'
-  imputed.data <- mixgb(data = for_mixgb, m = 1, nthread = 20, pmm.k = 10, initial.num = 'median')  # Perform imputation
-  imputed_data <- imputed.data[[1]] %>% as.data.frame()  # Convert the result to dataframe
-  return(imputed_data)  # Return the imputed data
-}
-
-
-# Main operations
 # Remove outliers from healthy data and print remaining rows
 healthy_outliers_removed <- remove_outliers_patients(healthy_numeric, .25, .75)
 print(paste('remaining healthy patients: ', nrow(healthy_outliers_removed)))
@@ -146,6 +149,10 @@ print(paste('remaining PKUs: ', nrow(PKU_outliers_removed)))
 
 # Impute PKU data
 PKU_outliers_inputation_done <- impute_data_with_mixgb(PKU_outliers_removed)
+
+# # ---------------------------------------------------------------------
+# # 5. DATA MERGING AND SAVING
+# # ---------------------------------------------------------------------
 
 # Add Group variable to both datasets
 healthy_outliers_inputation_done['Group'] <- "Control"
@@ -165,11 +172,3 @@ arrow::write_parquet(combined_data, output_file_path, compression = "gzip")
 
 # Print the output file path
 print(paste("The combined data has been saved to: ", output_file_path))
-
-
-
-
-
-
-
-
