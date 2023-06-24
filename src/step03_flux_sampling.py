@@ -1,3 +1,4 @@
+#script name: step03_flux_sampling.py
 import os
 import cobra
 from cobra.io.mat import load_matlab_model

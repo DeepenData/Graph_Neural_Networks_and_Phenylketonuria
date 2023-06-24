@@ -1,86 +1,75 @@
-# Step 01: Data proccessing. 
+# PKU Metabolic Modeling: Pipeline Overview
 
-`step01_data_processing.R`, a data preprocessing pipeline designed for a specific dataset consisting of control group and PKU patients data. 
+This repository contains a set of scripts that create a pipeline for metabolic modeling of Phenylketonuria (PKU), an inherited metabolic disorder characterized by an increased concentration of phenylalanine in the blood. The repository is organized as follows:
 
-## Description 
+## Folder Structure
 
-The script consists of a series of operations that are carried out in five main steps: Library Imports, Function Definitions, Data Loading & Cleaning, Data Processing, and Data Merging & Saving. 
+The repository has the following directory structure:
 
-In brief, the operations include:
+```
+|-- src
+|   |-- step01_data_processing.R
+|   |-- step02_classes_balancing_via_oversampling.py
+|   |-- step03_flux_sampling.py
+|   |-- step04_flux_samples_preprocessing.R
+|-- results
+|-- data
+```
 
-- Loading required libraries for data manipulation, visualization, and imputation.
-- Defining functions for outlier detection, outlier removal, and missing data imputation.
-- Loading data from specified file paths, followed by initial data cleaning operations such as column renaming, row filtering based on certain conditions, and date type conversion.
-- Performing advanced data processing operations, including outlier removal and missing data imputation, using the previously defined functions.
-- Merging the processed control group and PKU patients data into a single dataframe, then saving the dataframe as a Parquet file with Gzip compression.
+- The `src` directory contains all the scripts that constitute the PKU metabolic modeling pipeline.
+- The `results` directory should be created before running the scripts. It is the location where all output files from the scripts are stored.
+- The `data` directory should contain all necessary data files and metabolic models, required for running the scripts.
 
-## Usage 
+## Step 01: Data Processing 
 
-To use this script, follow these steps:
+The first script, `step01_data_processing.R`, serves as a data preprocessing pipeline designed specifically for a dataset that includes control group and PKU patient data. It executes the following operations:
 
-1. Install the necessary R packages: `tidyverse`, `magrittr`, `ggbeeswarm`, `ggpubr`, `mixgb`, `readxl`, and `arrow`.
-2. Set the file paths of the data files for control group and PKU patients in the "Data Loading and Cleaning" section.
-3. Set the output file path in the "Data Merging and Saving" section.
-4. Run the script in R.
+1. Import necessary libraries for data manipulation, visualization, and imputation.
+2. Define functions for outlier detection, outlier removal, and missing data imputation.
+3. Load and clean data from specified file paths.
+4. Perform advanced data processing operations, such as outlier removal and missing data imputation.
+5. Merge processed control group and PKU patient data into a single dataframe, then save the dataframe as a Parquet file.
 
-# Step 02: Class Balancing via Oversampling.
+## Step 02: Class Balancing via Oversampling
 
-`step02_classes_balancing_via_oversampling.py`, is used for data augmentation and balancing using Synthetic Minority Over-sampling Technique (SMOTE) in an imbalanced dataset. 
+The second script, `step02_classes_balancing_via_oversampling.py`, addresses class imbalance in the dataset by oversampling the minority class using Synthetic Minority Over-sampling Technique (SMOTE). The operations carried out by this script include:
 
-## Functionality
+1. Read a dataset from a specified Parquet file.
+2. Check for the presence of the 'Group' column in the DataFrame.
+3. Identify all feature columns of type float64.
+4. Convert the categorical 'Group' labels into numerical form, creating a target vector.
+5. Initialize a SMOTE instance for oversampling the minority class.
+6. Apply SMOTE to balance the class distribution.
+7. Create a new DataFrame from the resampled data.
+8. Save the new DataFrame as a Parquet file.
 
-The script performs the following operations:
+## Step 03: Flux Sampling
 
-1. Reads in a dataset from a specified Parquet file.
-2. Checks if the 'Group' column is present in the DataFrame.
-3. Identifies all feature columns of type float64.
-4. Converts the categorical 'Group' labels into numerical form using LabelEncoder from the `sklearn` library, creating the target vector.
-5. Initializes a SMOTE instance for oversampling the minority class.
-6. Uses SMOTE to balance the class distribution.
-7. Creates a new DataFrame from the resampled data.
-8. Saves this new DataFrame as a Parquet file with Gzip compression.
-
-## Usage
-
-The script requires Python 3 and the following Python libraries: `pandas`, `sklearn`, and `imblearn`. Install these libraries using pip:
-
-# Step03 Flux Sampling Script Explanation
-
-This script, named `step03_flux_sampling.py`, uses the COBRApy (COnstraints-Based Reconstruction and Analysis) toolbox to perform flux sampling on a metabolic model under two different conditions: healthy and PKU (Phenylketonuria). 
-
-## Functionality
-
-This script does the following:
+The third script, `step03_flux_sampling.py`, conducts flux sampling on a metabolic model under two different conditions: healthy and PKU. This script accomplishes the following tasks:
 
 1. Reads a metabolic model from a `.mat` file.
-2. Prints basic information about the model, such as the type, number of reactions, metabolites, and compartments.
-3. Adjusts the bounds of certain reactions in the model.
+2. Provides information about the model.
+3. Adjusts the bounds of specific reactions in the model.
 4. Sets the objective of the model.
-5. Turns off certain reactions associated with specific metabolites.
-6. Obtains regulatory reactions and sets their bounds.
+5. Disables certain reactions associated with specific metabolites.
+6. Retrieves regulatory reactions and sets their bounds.
 7. Initializes an instance of OptGPSampler from COBRA.
-8. Samples the solution space under both healthy and PKU conditions, generating 20,000 samples for each.
+8. Samples the solution space under both healthy and PKU conditions.
 9. Saves these samples to `.parquet.gzip` files.
 
-## Usage
+## Step 04: Flux Samples Preprocessing
 
-You will need Python 3 installed, along with the `os`, `cobra`, `warnings`, `itertools`, and `numpy` Python libraries. You can install these libraries using pip.
-
-# Step04: Flux Samples Preprocessing.
-
-The script `step04_flux_samples_preprocessing.R` is responsible for preprocessing flux samples obtained from metabolic models under two conditions: healthy (CONTROL) and PKU (Phenylketonuria).
-
-## Functionality
-
-This script carries out the following operations:
+The fourth script, `step04_flux_samples_preprocessing.R`, is responsible for preprocessing the flux samples obtained from the metabolic models. This script carries out the following operations:
 
 1. Checks if a given row in the dataframe contains an "out" value. 
 2. Identifies and labels outliers in a column as "out".
 3. Removes rows containing outliers from a dataframe.
 4. Reads the flux samples dataframes stored in parquet files.
 5. Performs outlier removal on the CONTROL and PKU samples.
-6. Writes back the cleaned flux samples dataframes to new parquet files.
+6. Writes the cleaned flux samples data
 
-## Usage
+frames to new parquet files.
 
-This script requires R and the following R libraries: `magrittr`, `tidyverse`, and `arrow`. 
+## Requirements and Usage
+
+The pipeline requires Python 3, R, and several dependencies which are outlined in the description of each script. To use the pipeline, set the appropriate file paths in each script, install the necessary dependencies, and run the scripts in the order specified above.
