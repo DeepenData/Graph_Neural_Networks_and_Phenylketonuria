@@ -1,6 +1,6 @@
-# `step01_data_preprocessing.R` 
+# Step 01: Data proccessing. 
 
-This repository contains the R script `step01_data_preprocessing.R`, a data preprocessing pipeline designed for a specific dataset consisting of control group and PKU patients data. 
+`step01_data_processing.R`, a data preprocessing pipeline designed for a specific dataset consisting of control group and PKU patients data. 
 
 ## Description 
 
@@ -22,3 +22,25 @@ To use this script, follow these steps:
 2. Set the file paths of the data files for control group and PKU patients in the "Data Loading and Cleaning" section.
 3. Set the output file path in the "Data Merging and Saving" section.
 4. Run the script in R.
+
+# Step 02: Class Balancing via Oversampling.
+
+`step02_classes_balancing_via_oversampling.py`, is used for data augmentation and balancing using Synthetic Minority Over-sampling Technique (SMOTE) in an imbalanced dataset. 
+
+## Functionality
+
+The script performs the following operations:
+
+1. Reads in a dataset from a specified Parquet file.
+2. Checks if the 'Group' column is present in the DataFrame.
+3. Identifies all feature columns of type float64.
+4. Converts the categorical 'Group' labels into numerical form using LabelEncoder from the `sklearn` library, creating the target vector.
+5. Initializes a SMOTE instance for oversampling the minority class.
+6. Uses SMOTE to balance the class distribution.
+7. Creates a new DataFrame from the resampled data.
+8. Saves this new DataFrame as a Parquet file with Gzip compression.
+
+## Usage
+
+The script requires Python 3 and the following Python libraries: `pandas`, `sklearn`, and `imblearn`. Install these libraries using pip:
+

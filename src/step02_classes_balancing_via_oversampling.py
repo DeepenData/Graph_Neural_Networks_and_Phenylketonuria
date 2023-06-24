@@ -1,9 +1,4 @@
 
-#%%
-# Import necessary libraries.
-
-# pandas is a data manipulation library. It lets us work with data in table format, 
-# similar to Excel spreadsheets.
 import pandas as pd
 
 # sklearn.preprocessing provides a number of utility functions to convert text labels into 
@@ -78,5 +73,3 @@ write_file_path = './processed_data/augmented_balanced_metabolite_data.parquet.g
 # Save the DataFrame as a parquet file using gzip compression.
 # Gzip is a file format and a software application used for file compression and decompression.
 augmented_data.to_parquet(write_file_path, compression='gzip')
-
-# %%
