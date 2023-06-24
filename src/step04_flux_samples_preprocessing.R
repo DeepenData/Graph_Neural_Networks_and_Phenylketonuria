@@ -1,4 +1,4 @@
-# Load necessary libraries
+#script name: step04_flux_samples_preprocessing.R
 library(magrittr) # For pipe operations
 library(tidyverse) # For data manipulation
 

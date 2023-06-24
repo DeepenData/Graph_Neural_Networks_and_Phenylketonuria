@@ -1,4 +1,3 @@
-# Import necessary libraries
 import os
 import cobra
 from cobra.io.mat import load_matlab_model
