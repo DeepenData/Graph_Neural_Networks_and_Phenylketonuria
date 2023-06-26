@@ -19,72 +19,8 @@ from datetime import datetime
 from torch_geometric.nn.models import GIN
 from torch_geometric.nn.models import GAT
 from torch_geometric.nn.models import GCN
-class BatchLoader():
-    """
-    BatchLoader is a class that helps to generate DataLoader for train, validation, and test sets.
-
-    Attributes:
-    ----------
-    graphs: list
-        The list of input graphs.
-    batch_size: int
-        The size of each batch of graphs. Default is 32.
-    num_samples: int, optional
-        The number of samples to draw from the graphs to form a batch. 
-        If not provided, all graphs are used.
-    validation_percent: float
-        The percentage of the dataset to be used for validation and testing. Default is 0.3 (30%).
-        
-    train_idxs: list
-        List of indexes for the training data split.
-    val_idxs: list
-        List of indexes for the validation data split.
-    test_idxs: list
-        List of indexes for the test data split.
-
-    Methods:
-    -------
-    get_train_loader():
-        Returns a DataLoader for the training data.
-    get_validation_loader():
-        Returns a DataLoader for the validation data.
-    get_test_loader():
-        Returns a DataLoader for the testing data.
-    """
-
-    def __init__(self, graphs: list, batch_size: int  =1*32, num_samples:int = None, validation_percent:float = .3):
-        self.graphs = graphs
-        self.batch_size = batch_size
-        self.num_samples = num_samples
-        self.validation_percent = validation_percent
-
-        # Splitting the data into train, validation, and test sets.
-        self.train_idxs, self.sub_idxs = train_test_split(range(len(self.graphs)), test_size = self.validation_percent)
-        self.val_idxs,   self.test_idxs = train_test_split(self.sub_idxs, test_size = self.validation_percent)     
-
-    def get_train_loader(self):
-        """
-        Generates and returns a DataLoader for the training data.
-        """
-        train_subset = [self.graphs[i] for i in self.train_idxs]
-        sampler      = RandomSampler(train_subset, replacement=False)   
-        return  DataLoader(train_subset, batch_size= self.batch_size, sampler = sampler,  drop_last=True)
-
-    def get_validation_loader(self):
-        """
-        Generates and returns a DataLoader for the validation data.
-        """
-        validation_subset = [self.graphs[i] for i in self.val_idxs]
-        sampler      = RandomSampler(validation_subset, replacement=False)   
-        return  DataLoader(validation_subset, batch_size= self.batch_size, sampler = sampler,  drop_last=True)
-
-    def get_test_loader(self):
-        """
-        Generates and returns a DataLoader for the test data.
-        """
-        test_subset = [self.graphs[i] for i in self.test_idxs]
-        sampler      = RandomSampler(test_subset, replacement=False)   
-        return  DataLoader(test_subset, batch_size= self.batch_size, sampler = sampler,  drop_last=True)
+from src.step06_create_dataloaders import BatchLoader
+# %%
 class my_GNN(torch.nn.Module):
     
     def __init__(
@@ -268,63 +204,67 @@ def train_and_validate(gnn_type, mask, flux, concentration, loader_path , EPOCHS
                     print(f"saved as {model_path}")
                     
     return model_path, all_train_accuracy_, all_validation_accuracy_
-epochs = 3 #35
+def main():
+  epochs = 3 #35
 
 
-GCN_masked_flux                          =   train_and_validate(gnn_type = "GCN", mask = True, flux = True, concentration = False,
-                                                  loader_path = "./results/dataloaders/MASKED_loader_only_Fluxes.pt" ,
-                                                    EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
+  GCN_masked_flux                          =   train_and_validate(gnn_type = "GCN", mask = True, flux = True, concentration = False,
+                                                    loader_path = "./results/dataloaders/MASKED_loader_only_Fluxes.pt" ,
+                                                      EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
 
-GCN_masked_concen                        =   train_and_validate(gnn_type = "GCN", mask = True, flux = False, concentration = True,
-                                                  loader_path = "./results/dataloaders/MASKED_loader_only_Concen.pt" ,
-                                                    EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
+  GCN_masked_concen                        =   train_and_validate(gnn_type = "GCN", mask = True, flux = False, concentration = True,
+                                                    loader_path = "./results/dataloaders/MASKED_loader_only_Concen.pt" ,
+                                                      EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
 
-GCN_masked_concen_plus_flux              =   train_and_validate(gnn_type = "GCN", mask = True, flux = True, concentration = True,
-                                                  loader_path = "./results/dataloaders/MASKED_loader_Concen_plus_Fluxes.pt" ,
-                                                    EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
-########################################################################################################################################################
-GAT_masked_flux                          =   train_and_validate(gnn_type = "GAT", mask = True, flux = True, concentration = False,
-                                                  loader_path = "./results/dataloaders/MASKED_loader_only_Fluxes.pt" ,
-                                                    EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
+  GCN_masked_concen_plus_flux              =   train_and_validate(gnn_type = "GCN", mask = True, flux = True, concentration = True,
+                                                    loader_path = "./results/dataloaders/MASKED_loader_Concen_plus_Fluxes.pt" ,
+                                                      EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
+  ########################################################################################################################################################
+  GAT_masked_flux                          =   train_and_validate(gnn_type = "GAT", mask = True, flux = True, concentration = False,
+                                                    loader_path = "./results/dataloaders/MASKED_loader_only_Fluxes.pt" ,
+                                                      EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
 
-GAT_masked_concen                        =   train_and_validate(gnn_type = "GAT", mask = True, flux = False, concentration = True,
-                                                  loader_path = "./results/dataloaders/MASKED_loader_only_Concen.pt" ,
-                                                    EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
+  GAT_masked_concen                        =   train_and_validate(gnn_type = "GAT", mask = True, flux = False, concentration = True,
+                                                    loader_path = "./results/dataloaders/MASKED_loader_only_Concen.pt" ,
+                                                      EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
 
-GAT_masked_concen_plus_flux              =   train_and_validate(gnn_type = "GAT", mask = True, flux = True, concentration = True,
-                                                  loader_path = "./results/dataloaders/MASKED_loader_Concen_plus_Fluxes.pt" ,
-                                                    EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
-########################################################################################################################################################
-GIN_masked_flux                          =   train_and_validate(gnn_type = "GIN", mask = True, flux = True, concentration = False,
-                                                  loader_path = "./results/dataloaders/MASKED_loader_only_Fluxes.pt" ,
-                                                    EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
+  GAT_masked_concen_plus_flux              =   train_and_validate(gnn_type = "GAT", mask = True, flux = True, concentration = True,
+                                                    loader_path = "./results/dataloaders/MASKED_loader_Concen_plus_Fluxes.pt" ,
+                                                      EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
+  ########################################################################################################################################################
+  GIN_masked_flux                          =   train_and_validate(gnn_type = "GIN", mask = True, flux = True, concentration = False,
+                                                    loader_path = "./results/dataloaders/MASKED_loader_only_Fluxes.pt" ,
+                                                      EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
 
-GIN_masked_concen                        =   train_and_validate(gnn_type = "GIN", mask = True, flux = False, concentration = True,
-                                                  loader_path = "./results/dataloaders/MASKED_loader_only_Concen.pt" ,
-                                                    EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
+  GIN_masked_concen                        =   train_and_validate(gnn_type = "GIN", mask = True, flux = False, concentration = True,
+                                                    loader_path = "./results/dataloaders/MASKED_loader_only_Concen.pt" ,
+                                                      EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
 
-GIN_masked_concen_plus_flux              =   train_and_validate(gnn_type = "GIN", mask = True, flux = True, concentration = True,
-                                                  loader_path = "./results/dataloaders/MASKED_loader_Concen_plus_Fluxes.pt" ,
-                                                    EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
+  GIN_masked_concen_plus_flux              =   train_and_validate(gnn_type = "GIN", mask = True, flux = True, concentration = True,
+                                                    loader_path = "./results/dataloaders/MASKED_loader_Concen_plus_Fluxes.pt" ,
+                                                      EPOCHS = epochs, save = True, verbose = True, saving_folder =  "./results/saved_GNNs/")
 
-training_results = {
-    'GCN_masked_flux' : GCN_masked_flux,
-    'GCN_masked_concen': GCN_masked_concen,
-    'GCN_masked_concen_plus_flux': GCN_masked_concen_plus_flux,
-    
-    'GAT_masked_flux': GAT_masked_flux,
-    'GAT_masked_concen': GAT_masked_concen,
-    'GAT_masked_concen_plus_flux': GAT_masked_concen_plus_flux,
-    
-    'GIN_masked_flux': GIN_masked_flux,
-    'GIN_masked_concen': GIN_masked_concen,
-    'GIN_masked_concen_plus_flux': GIN_masked_concen_plus_flux   }
+  training_results = {
+      'GCN_masked_flux' : GCN_masked_flux,
+      'GCN_masked_concen': GCN_masked_concen,
+      'GCN_masked_concen_plus_flux': GCN_masked_concen_plus_flux,
+      
+      'GAT_masked_flux': GAT_masked_flux,
+      'GAT_masked_concen': GAT_masked_concen,
+      'GAT_masked_concen_plus_flux': GAT_masked_concen_plus_flux,
+      
+      'GIN_masked_flux': GIN_masked_flux,
+      'GIN_masked_concen': GIN_masked_concen,
+      'GIN_masked_concen_plus_flux': GIN_masked_concen_plus_flux   }
 
 
-import pickle
+  import pickle
 
-#a = learning_results
+  #a = learning_results
 
-with open('./results/training_validation_best_models_paths/training_results.pickle', 'wb') as handle:
-    pickle.dump(training_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
+  with open('./results/training_validation_best_models_paths/training_results.pickle', 'wb') as handle:
+      pickle.dump(training_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 # %%
+# Call the main function
+if __name__ == "__main__":
+    main()

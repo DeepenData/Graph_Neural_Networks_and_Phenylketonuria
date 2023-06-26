@@ -1,6 +1,6 @@
 #%%
-#from    acevedo_clss_and_fcns import * 
-
+# Step 05: Create graph data structures for Pytorch Geometric from Networkx.
+#name of the script: step05_create_PYG_and_NX_graphs.py
 from   cobra.io.mat import *
 import copy
 import networkx as nx

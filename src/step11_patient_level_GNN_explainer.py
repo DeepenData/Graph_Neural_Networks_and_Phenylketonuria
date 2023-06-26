@@ -1,5 +1,8 @@
 # %%
-from acevedo_clss_and_fcns import * 
+#from acevedo_clss_and_fcns import * 
+import torch
+import gc
+import pandas as pd
 device = 'cpu'
 if torch.cuda.is_available():
     torch.cuda.init()
@@ -7,6 +10,8 @@ if torch.cuda.is_available():
         device = 'cuda:0'
 print(f"{device = }")
 from torch_geometric.nn import GNNExplainer
+from src.step09_train_GNNs import my_GNN
+from src.step06_create_dataloaders import BatchLoader
 
 import pickle
 
@@ -120,3 +125,4 @@ explanatory_subgraph_MASKED_GCN_Concentration.to_parquet(
     "./results/explanations/Explanatory_subgraph_MASKED_GIN_Concentration.parquet.gzip", compression='gzip')
 explanatory_subgraph_MASKED_GCN_Concen_plus_Fluxes.to_parquet(
     "./results/explanations/Explanatory_subgraph_MASKED_GIN_Concen_plus_Fluxes.parquet.gzip", compression='gzip')
+# %%

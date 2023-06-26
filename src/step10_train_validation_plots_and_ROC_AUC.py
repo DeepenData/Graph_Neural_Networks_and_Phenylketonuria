@@ -4,14 +4,80 @@ import pickle
 with open('./results/training_validation_best_models_paths/training_results.pickle', 'rb') as file:
     training_results = pickle.load(file)
 
-from acevedo_clss_and_fcns import * 
+#from acevedo_clss_and_fcns import * 
+import torch
 device = 'cpu'
 if torch.cuda.is_available():
     torch.cuda.init()
     if torch.cuda.is_initialized():
         device = 'cuda:0'
 print(f"{device = }")
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc
+import numpy as np
+from src.step06_create_dataloaders import BatchLoader
+from src.step09_train_GNNs import my_GNN
 
+def get_ROC_parameters(model, test_loader, device:str="cuda"):
+
+    tprs            = []
+    aucs = []
+    base_fpr = np.linspace(0, 1, 101)
+    for i, test_data in enumerate(test_loader):
+            
+        assert not test_data.is_cuda
+        if (device == 'cuda:0') | (device == 'cuda'):
+            test_data.to(device, non_blocking=True) 
+            assert test_data.is_cuda                          
+
+        test_predictions = model(test_data.x, test_data.edge_index,  test_data.batch)# Make predictions for this batch
+        pred            = test_predictions.argmax(dim=1)
+        y_batch         = test_data.y
+        
+        y_pred_tag = pred.squeeze().cpu().int().tolist()
+        y_true     = y_batch.squeeze().cpu().int().tolist()
+        fpr, tpr, _ = roc_curve(y_true, y_pred_tag)
+        roc_auc = auc(fpr, tpr)
+        aucs.append(roc_auc)
+        tpr = np.interp(base_fpr, fpr, tpr)
+        tpr[0] = 0.0
+        tprs.append(tpr)
+
+
+    tprs = np.array(tprs)
+    mean_tprs = tprs.mean(axis=0)
+    mean_auc = auc(base_fpr, mean_tprs)
+    std_auc = np.std(aucs)
+
+
+    tprs_upper = np.minimum(mean_tprs + tprs.std(axis=0), 1)
+    tprs_lower = mean_tprs - tprs.std(axis=0)
+    
+    return base_fpr, mean_tprs, tprs_lower, tprs_upper, mean_auc, std_auc
+
+def put_ROC_in_subplot(base_fpr, mean_tprs, tprs_lower,
+                   tprs_upper, mean_auc, std_auc, AX, xlabel:str='', letter:str=''):
+    
+    AX.plot(base_fpr, mean_tprs, 'b', alpha = 0.8, label=r'Test set ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),)
+    AX.fill_between(base_fpr, tprs_lower, tprs_upper, color = 'blue', alpha = 0.2)
+    AX.plot([0, 1], [0, 1], linestyle = '--', lw = 2, color = 'r', label = 'Random', alpha= 0.8)
+
+    #ax1.plot(fpr, tpr, lw=1, alpha=0.6, label='ROC fold %d (AUC = %0.2f)' % (i, roc_auc), c = colors[i])
+
+    AX.legend(loc="lower right", fontsize=7.5)
+    AX.set_ylabel('True Positive Rate')
+    AX.set_xlabel(xlabel)
+    AX.set_title(letter, fontsize = 12,  fontweight ="bold", loc='left')
+    
+    
+def put_Learning_curve(all_train_accuracy, all_validation_accuracy, AX, letter):
+    AX.plot(all_train_accuracy,  label = "Train set", linestyle="--")
+    AX.plot(all_validation_accuracy,  label = "Validation set", linestyle="-")
+    AX.legend(loc="lower right", fontsize=11)
+    AX.set_ylabel('Accuracy (%)')
+    AX.set_xlabel("Epochs")
+    AX.set_ylim(0.4, 1.1)
+    AX.set_title(letter, fontsize = 12,  fontweight ="bold", loc='left')
 GCN_masked_flux = torch.load(training_results['GCN_masked_flux'][0])
 GCN_masked_concen = torch.load(training_results['GCN_masked_concen'][0])
 GCN_masked_concen_plus_flux  = torch.load(training_results['GCN_masked_concen_plus_flux'][0])
@@ -92,3 +158,4 @@ plt.savefig('./results/figures/Figure_2.png',
         bbox_inches ="tight",
         pad_inches = 0.01,
         transparent = False, dpi=400)
+# %%
