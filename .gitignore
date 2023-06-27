@@ -2,6 +2,7 @@ tmp/
 results/
 results/genes/
 **/*.png
+!results/figures/Figure_1.png
 **/*.svg
 **/*.pdf   
 **/*.gzip 
