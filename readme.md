@@ -1,7 +1,7 @@
 # PKU Metabolic Modeling: Pipeline Overview
 
 This repository contains a set of scripts that create a pipeline for metabolic modeling of Phenylketonuria (PKU), an inherited metabolic disorder characterized by an increased concentration of phenylalanine in the blood. The repository is organized as follows:
-
+![Image](results/figures/Figure_1.png)
 ## Folder Structure
 
 The repository has the following directory structure:
@@ -12,6 +12,14 @@ The repository has the following directory structure:
 |   |-- step02_classes_balancing_via_oversampling.py
 |   |-- step03_flux_sampling.py
 |   |-- step04_flux_samples_preprocessing.R
+|   |-- step05_create_PYG_and_NX_graphs.py
+|   |-- step06_create_dataloaders.py
+|   |-- step07_make_gexf_for_graph_visualizations.py
+|   |-- step08a_make_figure_1.Rmd
+|   |-- step08b_make_supplementary_figure_1.Rmd
+|   |-- step09_train_GNNs.py
+|   |-- step10_train_validation_plots_and_ROC_AUC.py
+|   |-- step11_patient_level_GNN_explainer.py
 ```
 
 - The `src` directory contains all the scripts that constitute the PKU metabolic modeling pipeline.
